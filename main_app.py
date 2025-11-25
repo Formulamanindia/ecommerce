@@ -1,4 +1,4 @@
-## main_app.py - FINAL VERSION WITH NEW CSV FORMAT SUPPORT & DESCRIPTION GENERATION
+## main_app.py - FINAL VERSION WITH NEW CSV FORMAT SUPPORT & REFINED DESCRIPTION GENERATION
 
 import streamlit as st
 from PIL import Image
@@ -189,24 +189,40 @@ def get_sample_csv():
 
 def generate_description_mock(row):
     """
-    MOCK FUNCTION: Simulates generating a product description based on name and category 
-    by querying the web.
+    MOCK FUNCTION: Generates a conversion-focused, keyword-rich product description 
+    (under 1400 characters) if the existing description field is empty, based on user instructions.
     """
-    product_name = row.get('Product Name*')
+    # Extract data with safe defaults
+    title = row.get('Product Name*')
     category = row.get('Product Category*')
     color = row.get('Product Color*')
+    fabric = row.get('Fabric Type*', 'premium material')
+    brand = row.get('Brand*', 'a trusted source')
+    sizes = row.get('Variations (comma separated)*', 'various sizes').replace(',', ', ')
     
     # Check for mandatory input for description
-    if pd.isna(product_name) or pd.isna(category):
-        return "No description available due to missing product name or category."
+    if pd.isna(title) or pd.isna(category):
+        return "No comprehensive description generated due to missing product name or category."
         
-    return (
-        f"Introducing the high-quality **{product_name}** in a stunning **{color}** shade. "
-        f"This essential piece falls under the **{category}** category, known for its superior "
-        f"**{row.get('Fabric Type*', 'material')}** and modern design. With an MRP of ₹{row.get('MRP*')}, "
-        f"you can purchase this genuine **{row.get('Brand*', 'unbranded')}** product for only ₹{row.get('Selling Price*')}. "
-        f"It's perfect for all occasions and guaranteed to meet your expectations. Proudly made in **{row.get('Country Of Origin*', 'India')}**."
+    # Generate engaging description based on user logic:
+    # Tone: Warm, trustworthy. Focus: Comfort, fit, usage, buyer benefits.
+    description = (
+        f"Elevate your wardrobe with this exquisite **{category}** from **{brand}**. "
+        f"Crafted from ultra-soft **{fabric}**, this piece guarantees all-day **comfort** and a premium feel. "
+        f"The stunning **{color}** shade offers a versatile, modern look, effortlessly transitioning "
+        f"from casual outings to relaxed evening wear. Designed for a comfortable fit, it provides ease of "
+        f"movement while maintaining a sharp silhouette. Available in sizes **{sizes}**, finding your "
+        f"perfect match is simple. Invest in quality and style that lasts, ensuring you look and feel your best "
+        f"every time you wear it. A must-have staple for your collection. "
+        f"(Keywords: {title.replace(' ', ', ').replace('-', ',')}, {category}, {fabric}, {color})"
     )
+    
+    # Enforce character limit
+    MAX_CHARS = 1400
+    if len(description) > MAX_CHARS:
+        description = description[:MAX_CHARS - 3] + '...'
+    
+    return description
 
 
 def generate_sku_listings(df):
@@ -228,10 +244,10 @@ def generate_sku_listings(df):
             return None
             
     # --- NEW FEATURE: Generate/Update Product Description ---
-    # Apply the mock generation only to rows where the description is currently empty/missing
+    # Apply the generation ONLY if the description field is empty/missing (as per instruction)
     df[desc_col] = df.apply(
         lambda row: generate_description_mock(row) 
-        if pd.isna(row[desc_col]) or row[desc_col] == "" 
+        if pd.isna(row[desc_col]) or str(row[desc_col]).strip() == "" 
         else row[desc_col], 
         axis=1
     )
@@ -366,10 +382,9 @@ def listing_maker_tab():
                             # Display example of generated content
                             try:
                                 sample_sku = df_final['SKU Code*'].iloc[0]
-                                sample_desc = df_final['Product Description*'].iloc[0]
                                 
                                 with st.expander(f"View Sample Generated Description for SKU: {sample_sku}"):
-                                    st.markdown(sample_desc)
+                                    st.markdown(df_final['Product Description*'].iloc[0])
                                     
                             except IndexError:
                                 st.warning("No listings were generated. Check if the 'Variations (comma separated)*' column is correctly filled.")
@@ -401,7 +416,7 @@ def listing_maker_tab():
 
 
 def image_optimizer_tab():
-    st.title("🖼️ Image Optimizer")
+    st.title("✨ Image Optimizer")
     st.info("Compress and resize images to improve page load times.")
     
     uploaded_file = st.file_uploader("Upload Image to Optimize", type=["jpg", "jpeg", "png"], key="optimizer_uploader")
