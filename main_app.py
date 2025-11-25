@@ -203,7 +203,6 @@ def generate_description_mock(row):
     MOCK FUNCTION: Generates a conversion-focused product description (under 1400 characters) 
     if the existing description field is empty, with no markdown bolding.
     """
-    # Extract data with safe defaults
     title = row.get('Product Name*')
     category = row.get('Product Category*')
     color = row.get('Product Color*')
@@ -211,11 +210,9 @@ def generate_description_mock(row):
     brand = row.get('Brand*', 'a trusted source')
     sizes = row.get('Variations (comma separated)*', 'various sizes').replace(',', ', ')
     
-    # Check for mandatory input for description
     if pd.isna(title) or pd.isna(category):
         return "No comprehensive description generated due to missing product name or category."
         
-    # Generate engaging description based on user logic:
     description = (
         f"Elevate your wardrobe with this exquisite {category} from {brand}. "
         f"Crafted from ultra-soft {fabric}, this piece guarantees all-day COMFORT and a premium feel. "
@@ -227,7 +224,6 @@ def generate_description_mock(row):
         f"(Keywords: {title.replace(' ', ', ').replace('-', ',')}, {category}, {fabric}, {color})"
     )
     
-    # Enforce character limit
     MAX_CHARS = 1400
     if len(description) > MAX_CHARS:
         description = description[:MAX_CHARS - 3] + '...'
@@ -563,26 +559,61 @@ def configuration_tab():
             "Status": ["Active", "Active"]
         }))
         
+        # --- MARKETPLACE ADDER ---
         st.subheader("Marketplace and Logo Management")
-        st.info("Use this tool to add new marketplaces and their corresponding logo links for use in the Pricing Tool.")
+        st.info("Use this tool to add new marketplaces or edit existing logos.")
         
-        # --- Marketplace Name and Logo Link Adder ---
-        with st.form("marketplace_adder", clear_on_submit=True):
-            new_name = st.text_input("Marketplace Name (e.g., Nykaa)", key="new_mp_name").strip()
-            new_logo_url = st.text_input("Logo Link/URL (e.g., https://logo.com/nykaa.png)", key="new_mp_logo").strip()
-            submitted = st.form_submit_button("Add Marketplace")
+        with st.expander("➕ Add New Marketplace", expanded=False):
+            with st.form("marketplace_adder", clear_on_submit=True):
+                new_name = st.text_input("Marketplace Name (e.g., Nykaa)", key="new_mp_name").strip()
+                new_logo_url = st.text_input("Logo Link/URL (e.g., https://logo.com/nykaa.png)", key="new_mp_logo").strip()
+                submitted = st.form_submit_button("Add Marketplace")
 
-            if submitted:
-                if new_name and new_logo_url:
-                    if new_name not in st.session_state.marketplace_logos:
-                        st.session_state.marketplace_logos[new_name] = new_logo_url
-                        st.success(f"Marketplace '{new_name}' added successfully! Please refresh the Pricing Tool tab.")
-                        st.rerun() # Rerun to update the Pricing Tool tabs immediately
+                if submitted:
+                    if new_name and new_logo_url:
+                        if new_name not in st.session_state.marketplace_logos:
+                            st.session_state.marketplace_logos[new_name] = new_logo_url
+                            st.success(f"Marketplace '{new_name}' added successfully!")
+                            st.rerun() 
+                        else:
+                            st.warning(f"Marketplace '{new_name}' already exists.")
                     else:
-                        st.warning(f"Marketplace '{new_name}' already exists.")
-                else:
-                    st.error("Please enter both a name and a logo link.")
+                        st.error("Please enter both a name and a logo link.")
         
+        # --- MARKETPLACE LOGO EDITOR (NEW FEATURE) ---
+        
+        if st.session_state.marketplace_logos:
+            st.subheader("Marketplace Logo Editor")
+            
+            # 1. Select Marketplace to Edit
+            marketplace_to_edit = st.selectbox(
+                "Select Marketplace to Edit Logo",
+                options=list(st.session_state.marketplace_logos.keys()),
+                key="mp_edit_selector"
+            )
+            
+            current_logo_url = st.session_state.marketplace_logos.get(marketplace_to_edit, "")
+            
+            with st.form("marketplace_editor", clear_on_submit=False):
+                # 2. Input for New Logo URL (pre-filled with current URL)
+                new_logo_url_edit = st.text_input(
+                    f"New Logo Link/URL for **{marketplace_to_edit}**", 
+                    value=current_logo_url,
+                    key="new_mp_logo_edit"
+                ).strip()
+                
+                # 3. Update Button
+                submitted_edit = st.form_submit_button("Update Logo")
+                
+                if submitted_edit:
+                    if new_logo_url_edit:
+                        st.session_state.marketplace_logos[marketplace_to_edit] = new_logo_url_edit
+                        st.success(f"Logo for '{marketplace_to_edit}' updated successfully! The app will refresh now.")
+                        st.rerun() # Rerun to refresh the displayed table and the Pricing Tool tabs immediately
+                    else:
+                        st.error("Logo link cannot be empty.")
+        
+        st.markdown("---")
         st.markdown("#### Current Marketplaces:")
         current_mps = pd.DataFrame(st.session_state.marketplace_logos.items(), columns=['Marketplace', 'Logo URL'])
         st.dataframe(current_mps, use_container_width=True)
