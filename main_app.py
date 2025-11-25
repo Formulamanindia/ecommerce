@@ -37,11 +37,7 @@ DEFAULT_MARKETPLACES = {
 }
 
 # --- GLOBAL SERVICE MAP ---
-# Defines all services, their icons, functions, and colors for the dashboard cards.
-def placeholder_function():
-    st.info("Functionality is being implemented.")
-
-SERVICE_MAP = {} # Defined later to ensure function references work
+# Defined later to ensure function references work
 
 # Initialize Session State
 if 'logged_in' not in st.session_state:
@@ -222,9 +218,6 @@ def set_page(page_name):
     st.session_state.current_page = page_name
     
 # --- 3. CORE LOGIC FUNCTIONS ---
-# (Helper functions like get_sample_csv, generate_description_mock, 
-# and generate_sku_listings remain the same but are omitted for brevity in the explanation, 
-# they are included in the final file.)
 
 def get_sample_csv():
     """Generates the sample CSV data for download based on defined headers."""
@@ -965,6 +958,3 @@ def run_app():
 
 if __name__ == "__main__":
     run_app()
-
-
-I've updated the `main_app.py` file to include the two new services, define the `SERVICE_MAP` structure, and implement the dynamic **Dashboard** view and sidebar navigation based on your requirements and design inspiration.
