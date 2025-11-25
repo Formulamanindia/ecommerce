@@ -63,24 +63,24 @@ if 'current_page' not in st.session_state:
 
 # --- 2. CUSTOM CSS/INTERFACE ---
 
+# Define global color variables based on the custom CSS
+SIDEBAR_BG_COLOR = "#212838"  
+BACKGROUND_COLOR = "#F8F9FA"  
+ACCENT_COLOR = "#00C6FF"      
+PRIMARY_TEXT_COLOR = "#212838" 
+SIDEBAR_TEXT_COLOR = "#FFFFFF" 
+HOVER_COLOR = "#333d4f"       
+
 def apply_custom_css():
     """Applies custom CSS for the modern dashboard look and service boxes."""
     
-    # NEW COLOR SCHEME based on https://matdash-angular-rtl.netlify.app/dashboards/dashboard1
-    SIDEBAR_BG_COLOR = "#212838"  # Deep Indigo/Dark Slate for sidebar
-    BACKGROUND_COLOR = "#F8F9FA"  # Very Light Gray for main content
-    ACCENT_COLOR = "#00C6FF"      # Vibrant Cyan for active link/highlight
-    PRIMARY_TEXT_COLOR = "#212838" # Dark text for main content
-    SIDEBAR_TEXT_COLOR = "#FFFFFF" # White text for sidebar
-    HOVER_COLOR = "#333d4f"       # Slightly lighter shade for sidebar hover
-
     custom_css = f"""
     <style>
     /* Global Styling */
     .stApp {{
         background-color: {BACKGROUND_COLOR};
         color: {PRIMARY_TEXT_COLOR};
-        font-family: 'Roboto', sans-serif; /* Using a clean, common font */
+        font-family: 'Roboto', sans-serif;
     }}
     
     /* Sidebar Styling - Targeted class for the Streamlit sidebar */
@@ -138,7 +138,7 @@ def apply_custom_css():
         border: 1px solid #e0e0e0; 
         padding: 20px 10px;
         width: 100%;
-        height: 160px; /* Fixed height for uniformity in the grid */
+        height: 160px; 
         border-radius: 12px; 
         box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
         transition: transform 0.3s, box-shadow 0.3s, background-color 0.3s;
@@ -166,7 +166,7 @@ def apply_custom_css():
         padding: 10px 20px; 
         box-shadow: none;
         height: auto;
-        transform: none; /* No hover lift for functional buttons */
+        transform: none; 
     }}
     .stApp .stButton button[data-testid*="primaryButton"]:hover {{
         background-color: #00B1E6;
@@ -800,9 +800,7 @@ def configuration_tab():
     else:
         st.error("🛑 Access Denied. This section is for Admin access only.")
 
-# --- 5. DASHBOARD FUNCTION (Service Card View) ---
-
-# Map the service names to their actual functions
+# --- Map the service names to their actual functions ---
 SERVICE_MAP["📝 Listing Maker"]["function"] = listing_maker_tab
 SERVICE_MAP["💰 Pricing Tool"]["function"] = pricing_tool_tab
 SERVICE_MAP["🖼️ Image Uploader"]["function"] = image_uploader_tab
@@ -812,6 +810,7 @@ SERVICE_MAP["🔍 Key Word Extractor"]["function"] = keyword_extractor_tab
 SERVICE_MAP["🧾 GST Filing"]["function"] = gst_filing_tab
 SERVICE_MAP["📊 Report Maker"]["function"] = report_maker_tab
 
+# --- 5. DASHBOARD FUNCTION (Service Card View) ---
 
 def service_dashboard_tab():
     """Renders the main landing page with service cards in a responsive grid."""
@@ -820,11 +819,10 @@ def service_dashboard_tab():
     st.subheader("Your E-commerce Automation Toolkit")
     st.markdown("---")
     
-    # Define columns for a responsive grid (3 cards per row)
     services = list(SERVICE_MAP.items())
     num_services = len(services)
     
-    # Calculate rows (always 3 columns wide)
+    # Define columns for a responsive grid (3 cards per row)
     num_cols = 3
     num_rows = (num_services + num_cols - 1) // num_cols
     
@@ -835,9 +833,7 @@ def service_dashboard_tab():
             if index < num_services:
                 service_name, service_data = services[index]
                 
-                # The button label uses raw HTML to achieve the card content layout 
-                # (Icon, Title, Description) which relies on the general button CSS 
-                # to provide the card shape and hover effect.
+                # Use custom HTML for the card content layout (Icon, Title, Description)
                 card_content_html = f"""
                 <div style='display: flex; flex-direction: column; justify-content: center; align-items: center; width: 100%; height: 100%; text-align: center;'>
                     <div style='color: {service_data['color']}; font-size: 2.5em; margin-bottom: 5px;'>
@@ -853,7 +849,7 @@ def service_dashboard_tab():
                 """
                 
                 with cols[j]:
-                    # Use a standard button with a unique key. The custom HTML is injected as the label.
+                    # Use a standard button with unique key. Clicking it sets the new page state.
                     if st.button(
                         card_content_html,
                         key=f"card_btn_{service_name.replace(' ', '_')}", # Unique key for stability
@@ -900,28 +896,37 @@ def run_app():
         
         # --- Sidebar Navigation Logic ---
         
-        # Main sidebar options: Dashboard and Configuration
-        sidebar_nav_options = ["Dashboard"]
+        # Main sidebar options: Dashboard, Services (hidden group), and Configuration
+        sidebar_options = ["Dashboard"] + list(SERVICE_MAP.keys())
         if st.session_state.is_admin:
-             sidebar_nav_options.append("🔧 Configuration (Admin)")
+             sidebar_options.append("🔧 Configuration (Admin)")
 
-        # Determine the current selected option in the sidebar
-        current_sidebar_index = 0
-        if st.session_state.current_page in sidebar_nav_options:
-            current_sidebar_index = sidebar_nav_options.index(st.session_state.current_page)
-        else:
-            # If a service page is active, highlight the Dashboard link
-            current_sidebar_index = 0 
+        # Determine the currently active page for the sidebar highlighting
+        try:
+            current_index = sidebar_options.index(st.session_state.current_page)
+        except ValueError:
+            current_index = 0 # Default to Dashboard if service page is active or page is unknown
+        
+        # Use only Dashboard and Configuration in the main radio control 
+        # to prevent all services from showing as radio buttons
+        main_nav_options = ["Dashboard"]
+        if st.session_state.is_admin:
+            main_nav_options.append("🔧 Configuration (Admin)")
+            
+        # Select the default index for the sidebar radio based on the current page
+        default_sidebar_index = 0
+        if st.session_state.current_page == "🔧 Configuration (Admin)" and st.session_state.is_admin:
+            default_sidebar_index = 1
         
         selected_option = st.sidebar.radio(
             "Navigation", 
-            sidebar_nav_options,
-            index=current_sidebar_index,
+            main_nav_options,
+            index=default_sidebar_index,
             key="main_sidebar_nav"
         )
         
         # If the user clicks on a sidebar link, update the current page and rerun
-        if selected_option != st.session_state.current_page and selected_option in sidebar_nav_options:
+        if selected_option != st.session_state.current_page:
             st.session_state.current_page = selected_option
             st.rerun()
 
@@ -942,7 +947,7 @@ def run_app():
         elif current_page == "🔧 Configuration (Admin)":
             configuration_tab()
         elif current_page in SERVICE_MAP:
-            # Execute the function for the selected service
+            # Execute the function for the selected service (navigated from dashboard card)
             SERVICE_MAP[current_page]["function"]()
         else:
             st.title("Page Not Found")
@@ -953,6 +958,3 @@ def run_app():
 
 if __name__ == "__main__":
     run_app()
-
-
-I've successfully restored the dashboard view. The main page after logging in is now a service card landing page, and clicking any card will navigate to that specific tool. I made sure to use unique keys and the recommended Streamlit structure to prevent the previously reported errors.
