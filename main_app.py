@@ -1,11 +1,11 @@
-## main_app.py - FINAL VERSION WITH SOCIAL ICONS IN SIDEBAR
+## main_app.py - FINAL VERSION WITH BANK SETTLEMENT ROUND DOWN
 
 import streamlit as st
 from PIL import Image
 import io
 import pandas as pd
 import base64
-import numpy as np
+import numpy as np # <-- NumPy is required for floor operation
 
 # --- 1. CONFIGURATION AND INITIAL SETUP ---
 st.set_page_config(
@@ -44,8 +44,6 @@ if 'logged_in' not in st.session_state:
     st.session_state.logged_in = False
     st.session_state.username = None
     st.session_state.is_admin = False
-    
-# Removed: 'show_social_icons' is no longer needed in session state
     
 if 'marketplace_logos' not in st.session_state:
     st.session_state.marketplace_logos = DEFAULT_MARKETPLACES
@@ -153,7 +151,6 @@ def apply_custom_css():
         border-top: 1px solid #e0e0e0;
         z-index: 100;
     }}
-    /* Removed social-icons CSS since they are no longer in the footer */
     
     /* Ensure marketplace logos are square */
     .stImage > img {{
@@ -426,10 +423,10 @@ def pricing_tool_tab():
                         (~df['BS_Num'].isna()) # Ensure it was successfully converted to a number
                     )
 
-                    # Apply the increase to the original 'Bank Settlement' column for filtered rows.
+                    # --- UPDATED: Apply increase, round down, and cast to integer (no decimals) ---
                     df.loc[condition, 'Bank Settlement'] = (
-                        df.loc[condition, 'BS_Num'] * multiplier
-                    ).round(2)
+                        np.floor(df.loc[condition, 'BS_Num'] * multiplier)
+                    ).astype(int)
                     
                     # Remove temporary column
                     df.drop(columns=['BS_Num'], inplace=True)
@@ -678,8 +675,6 @@ def configuration_tab():
     if st.session_state.is_admin:
         st.success(f"Welcome Admin **{st.session_state.username}**. You have full access.")
         
-        # Removed "Interface Controls" section as show_social_icons is no longer used
-        
         st.subheader("User Management (Placeholder)")
         st.table(pd.DataFrame({
             "User ID": ["Globalite", "User"],
@@ -800,7 +795,7 @@ def run_app():
         
         st.sidebar.markdown("---")
         
-        # --- NEW LOCATION FOR SOCIAL ICONS (ABOVE LOGOUT) ---
+        # --- LOCATION FOR SOCIAL ICONS (ABOVE LOGOUT) ---
         social_links_html = """
         <div style="text-align: center; padding: 10px 0; border-top: 1px solid rgba(255, 255, 255, 0.1);">
             <a href="https://www.linkedin.com/in/formulaman/" target="_blank" style="margin-right: 15px; font-size: 1.2em; color: #00C6FF; text-decoration: none;">🔗 LinkedIn</a>
