@@ -894,34 +894,25 @@ def run_app():
         st.sidebar.markdown(f"**Role:** {USER_ACCESS.get(st.session_state.username, 'N/A')}")
         st.sidebar.markdown("---")
         
-        # --- Sidebar Navigation Logic ---
+        # --- Sidebar Navigation Logic (UPDATED TO SHOW ALL SERVICES) ---
         
-        # Main sidebar options: Dashboard, Services (hidden group), and Configuration
-        sidebar_options = ["Dashboard"] + list(SERVICE_MAP.keys())
+        # List of all available pages, including Dashboard and Config
+        main_nav_options = ["Dashboard"] + list(SERVICE_MAP.keys())
         if st.session_state.is_admin:
-             sidebar_options.append("🔧 Configuration (Admin)")
-
+             main_nav_options.append("🔧 Configuration (Admin)")
+             
         # Determine the currently active page for the sidebar highlighting
+        current_index = 0
         try:
-            current_index = sidebar_options.index(st.session_state.current_page)
+            current_index = main_nav_options.index(st.session_state.current_page)
         except ValueError:
-            current_index = 0 # Default to Dashboard if service page is active or page is unknown
-        
-        # Use only Dashboard and Configuration in the main radio control 
-        # to prevent all services from showing as radio buttons
-        main_nav_options = ["Dashboard"]
-        if st.session_state.is_admin:
-            main_nav_options.append("🔧 Configuration (Admin)")
-            
-        # Select the default index for the sidebar radio based on the current page
-        default_sidebar_index = 0
-        if st.session_state.current_page == "🔧 Configuration (Admin)" and st.session_state.is_admin:
-            default_sidebar_index = 1
-        
+            current_index = 0 # Default to Dashboard if page is unknown
+
+        # Use st.sidebar.radio with all pages for complete navigation
         selected_option = st.sidebar.radio(
             "Navigation", 
             main_nav_options,
-            index=default_sidebar_index,
+            index=current_index,
             key="main_sidebar_nav"
         )
         
@@ -947,7 +938,7 @@ def run_app():
         elif current_page == "🔧 Configuration (Admin)":
             configuration_tab()
         elif current_page in SERVICE_MAP:
-            # Execute the function for the selected service (navigated from dashboard card)
+            # Execute the function for the selected service (navigated from radio button)
             SERVICE_MAP[current_page]["function"]()
         else:
             st.title("Page Not Found")
