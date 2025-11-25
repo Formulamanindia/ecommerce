@@ -36,8 +36,17 @@ DEFAULT_MARKETPLACES = {
     "Meesho": "https://images.meesho.com/images/branding/meesho-horizontal-logo.svg"
 }
 
-# Define the SERVICE_MAP here (now only for logic, not dashboard buttons)
-SERVICE_MAP = {} 
+# Define the SERVICE_MAP with new descriptions for the dashboard cards
+SERVICE_MAP = {
+    "📝 Listing Maker": {"icon": "📝", "function": None, "color": "#00C6FF", "description": "Generate error-free bulk product listings for e-commerce."},
+    "💰 Pricing Tool": {"icon": "💰", "function": None, "color": "#18D5C1", "description": "Calculate competitive selling prices and update marketplace files."},
+    "🖼️ Image Uploader": {"icon": "🖼️", "function": None, "color": "#FFC107", "description": "Quickly upload, preview, and manage single product images."},
+    "✨ Image Optimizer": {"icon": "✨", "function": None, "color": "#F39C12", "description": "Bulk optimize images by resizing and compressing for web."} ,
+    "📈 Listing Optimizer": {"icon": "📈", "function": None, "color": "#E91E63", "description": "Improve descriptions for better conversion, SEO, and visibility."},
+    "🔍 Key Word Extractor": {"icon": "🔍", "function": None, "color": "#9C27B0", "description": "Find relevant, high-ranking keywords for your product titles."},
+    "🧾 GST Filing": {"icon": "🧾", "function": None, "color": "#4CAF50", "description": "Simplify monthly GST compliance, reconciliation, and filing."},
+    "📊 Report Maker": {"icon": "📊", "function": None, "color": "#2196F3", "description": "Generate custom sales, inventory, and business intelligence reports."},
+}
 
 # Initialize Session State
 if 'logged_in' not in st.session_state:
@@ -100,6 +109,7 @@ def apply_custom_css():
         background-color: {HOVER_COLOR};
         color: {ACCENT_COLOR}; 
     }}
+    /* Highlight the checked radio button as the active page */
     .stRadio > label:has(input:checked) {{
         background-color: {HOVER_COLOR} !important; 
         color: {ACCENT_COLOR} !important; 
@@ -120,25 +130,54 @@ def apply_custom_css():
         margin-top: 20px; 
     }}
 
-    /* Primary Buttons */
-    .stButton>button {{ 
-        background-color: {ACCENT_COLOR}; 
-        color: {SIDEBAR_BG_COLOR}; /* Dark text on light accent button */
-        border: none; 
-        padding: 10px 20px; 
-        border-radius: 5px; 
-        font-weight: 600;
-        transition: background-color 0.3s, color 0.3s; 
-    }}
-    .stButton>button:hover {{ 
-        background-color: #00B1E6; /* Slightly darker cyan on hover */
+    /* Global Button Styling (The card look is now applied generally to all non-primary buttons in the main area) */
+    .stApp .stButton>button {{
+        /* Base Card Look for Dashboard and general controls */
+        background-color: #FFFFFF; 
+        color: {PRIMARY_TEXT_COLOR};
+        border: 1px solid #e0e0e0; 
+        padding: 20px 10px;
+        width: 100%;
+        height: 160px; /* Fixed height for uniformity in the grid */
+        border-radius: 12px; 
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+        transition: transform 0.3s, box-shadow 0.3s, background-color 0.3s;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        white-space: normal; 
+        line-height: 1.2;
     }}
     
+    /* Global Button Hover Effect */
+    .stApp .stButton>button:hover {{
+        transform: translateY(-5px); 
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        background-color: #f7f7f7; 
+    }}
+    
+    /* Revert Streamlit Primary Button for functional buttons (e.g., Download, Generate) */
+    .stApp .stButton button[data-testid*="primaryButton"] {{
+        background-color: {ACCENT_COLOR}; 
+        color: {SIDEBAR_BG_COLOR}; 
+        border: none; 
+        padding: 10px 20px; 
+        box-shadow: none;
+        height: auto;
+        transform: none; /* No hover lift for functional buttons */
+    }}
+    .stApp .stButton button[data-testid*="primaryButton"]:hover {{
+        background-color: #00B1E6;
+        box-shadow: none;
+    }}
+
     /* Info Box / Alert for cleaner look */
     .stAlert.info, .stInfo {{
-        background-color: #E3F2FD; /* Light Blue BG */
-        border-left: 5px solid {ACCENT_COLOR}; /* Accent Cyan Border */
-        color: #1565C0; /* Darker Blue Text */
+        background-color: #E3F2FD; 
+        border-left: 5px solid {ACCENT_COLOR}; 
+        color: #1565C0; 
     }}
 
     /* Footer Style - Simple and Centered */
@@ -152,52 +191,18 @@ def apply_custom_css():
         font-size: 0.8em;
         border-top: 1px solid #e0e0e0;
         z-index: 100;
-        text-align: center; /* Center the text */
+        text-align: center; 
         padding: 10px; 
     }}
     
-    /* --- DASHBOARD CARD/BOX STYLING --- */
-    
-    /* Card layout */
-    .stButton[data-testid*="stButton"] > button.dash-card {{
-        background-color: #FFFFFF; 
-        color: #212838;
-        border: none;
-        padding: 20px 10px; /* Reduced padding for more cards on one row */
-        width: 100%;
-        height: 160px; /* Fixed height for uniformity */
-        border-radius: 12px; 
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08); /* Soft shadow */
-        transition: transform 0.3s, box-shadow 0.3s;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        text-align: center;
-    }}
-    
-    /* Card hover effect */
-    .stButton[data-testid*="stButton"] > button.dash-card:hover {{
-        transform: translateY(-5px); 
-        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15); /* Stronger shadow on hover */
-    }}
-
-    /* Card Icon Styling */
-    .stButton[data-testid*="stButton"] > button.dash-card .card-icon {{
-        font-size: 3em;
-        margin-bottom: 5px;
-    }}
-    
-    /* Card Title Styling */
-    .stButton[data-testid*="stButton"] > button.dash-card .card-title {{
-        font-weight: 600;
-        font-size: 1.1em;
-        line-height: 1.2;
-    }}
-
     /* Ensure marketplace logos are square */
     .stImage > img {{
         object-fit: contain;
+    }}
+    
+    /* Hide the ugly radio button dot in the sidebar */
+    .stRadio > label > div:first-child {{
+        display: none !important;
     }}
     </style>
     """
@@ -213,10 +218,6 @@ def display_footer():
     """
     st.markdown(footer_html, unsafe_allow_html=True)
 
-def set_page(page_name):
-    """Callback function to change the current page in session state."""
-    st.session_state.current_page = page_name
-    
 # --- 3. CORE LOGIC FUNCTIONS ---
 
 def get_sample_csv():
@@ -238,7 +239,6 @@ def get_sample_csv():
         'Country Of Origin*': ["India"],
         'Pack of*': [1],
         'Product Category*': ["T-Shirt"],
-        # NOTE: This link is used as an example for the image preview feature
         'Main Image*': ["https://i.imgur.com/8Q9j0rX.png"],
         '1 st Image': ["(Optional)"],
         '2nd Image': ["(Optional)"],
@@ -348,10 +348,7 @@ def generate_sku_listings(df):
     
     return df_sorted
 
-# --- 4. DASHBOARD AND SERVICE PAGES (All Dashboard Content Removed) ---
-
-# --- Service Function Definitions ---
-# These functions are kept as they contain valuable logic, but are currently unreachable via navigation
+# --- 4. SERVICE PAGE DEFINITIONS ---
 
 def listing_maker_tab():
     st.title("📝 Listing Maker")
@@ -383,7 +380,8 @@ def listing_maker_tab():
             label="Download Ecommerce Sample CSV",
             data=get_sample_csv(),
             file_name="Ecommerce_Listing_Sample_Template.csv",
-            mime="text/csv"
+            mime="text/csv",
+            type="primary" # Use primary type for functional buttons
         )
         st.subheader("3. Upload Product CSV")
         uploaded_file = st.file_uploader(
@@ -405,7 +403,7 @@ def listing_maker_tab():
                 
                 st.success(f"File uploaded successfully. {df_uploaded.shape[0]} base products found.")
                 
-                if st.button("Generate SKU Listings and Download"):
+                if st.button("Generate SKU Listings and Download", key="generate_sku_btn", type="primary"):
                     with st.spinner('Generating SKU listings and descriptions...'):
                         df_final = generate_sku_listings(df_uploaded.copy())
                         
@@ -448,7 +446,8 @@ def listing_maker_tab():
                                 label="Download Final SKU CSV",
                                 data=csv_data,
                                 file_name=f"SKU_Listings_for_{'_'.join(selected_channels)}.csv",
-                                mime="text/csv"
+                                mime="text/csv",
+                                type="primary"
                             )
                             st.success("Listings generated and ready for download.")
 
@@ -522,7 +521,7 @@ def pricing_tool_tab():
                     key=f'{name}_uploader'
                 )
 
-                if uploaded_file is not None and st.button("Calculate & Prepare Download", key=f'{name}_calculate_btn'):
+                if uploaded_file is not None and st.button("Calculate & Prepare Download", key=f'{name}_calculate_btn', type="primary"):
                     
                     df = None
                     
@@ -588,7 +587,8 @@ def pricing_tool_tab():
                         label="Download Updated Flipkart File (CSV)",
                         data=csv_data,
                         file_name=f"Flipkart_Price_Updated_{min_bs}_{max_bs}_plus{increase_percent}%.csv",
-                        mime="text/csv"
+                        mime="text/csv",
+                        type="primary"
                     )
                     st.dataframe(df.head(5))
 
@@ -609,7 +609,7 @@ def image_uploader_tab():
                 st.image(image, use_column_width=True)
                 quality = st.slider("Compression Quality (0=Max, 100=Min)", 10, 95, 85)
                 max_width = st.number_input("Max Width (px)", value=1000, min_value=100)
-            if st.button("Optimize Image"):
+            if st.button("Optimize Image", key="optimize_image_btn", type="primary"):
                 if image.width > max_width:
                     ratio = max_width / image.width
                     new_height = int(image.height * ratio)
@@ -627,7 +627,8 @@ def image_uploader_tab():
                         label="Download Optimized Image",
                         data=buffer,
                         file_name=f"optimized_{uploaded_file.name}",
-                        mime="image/jpeg"
+                        mime="image/jpeg",
+                        type="primary"
                     )
         except Exception as e:
             st.error(f"An error occurred during optimization: {e}")
@@ -642,7 +643,7 @@ def image_optimizer_tab():
         st.number_input("Target Max Width (px)", value=800, min_value=100, key="opt_width")
         st.slider("Target JPEG Quality", 70, 95, 80, key="opt_quality")
         
-        if st.button("Run Bulk Optimization"):
+        if st.button("Run Bulk Optimization", key="run_bulk_opt_btn", type="primary"):
             with st.spinner("Optimizing images..."):
                 # Mock processing loop
                 import time
@@ -654,7 +655,7 @@ def listing_optimizer_tab():
     st.title("📈 Listing Optimizer")
     st.info("Analyze and improve your current product listing text for better conversion and SEO.")
     listing_text = st.text_area("Paste your current product listing description here:", height=300)
-    if st.button("Analyze & Suggest Improvements"):
+    if st.button("Analyze & Suggest Improvements", key="analyze_listing_btn", type="primary"):
         if listing_text:
             st.subheader("Analysis Results (Placeholder)")
             st.markdown("* **Keyword Density:** Low - Focus on 'Cotton T-Shirt'")
@@ -669,7 +670,7 @@ def keyword_extractor_tab():
     st.title("🔍 Key Word Extractor")
     st.info("Extract relevant, high-ranking keywords from competitors or product ideas.")
     seed_phrase = st.text_input("Enter a seed phrase or competitor's product name:")
-    if st.button("Extract Keywords"):
+    if st.button("Extract Keywords", key="extract_keywords_btn", type="primary"):
         if seed_phrase:
             st.subheader(f"Keywords for: **{seed_phrase}** (Simulated)")
             keywords = [
@@ -702,7 +703,7 @@ def gst_filing_tab():
     st.file_uploader("Upload Sales Data (GSTR-1, GSTR-3B)", type=["csv", "xlsx"])
     st.file_uploader("Upload Purchase Data (GSTR-2A/2B)", type=["csv", "xlsx"])
     
-    if st.button("Generate Reconciliation Report"):
+    if st.button("Generate Reconciliation Report", key="generate_report_btn", type="primary"):
         st.success("Reconciliation report generated successfully (simulated). Discrepancies: 5.")
 
 def report_maker_tab():
@@ -721,7 +722,7 @@ def report_maker_tab():
     with col2:
         end_date = st.date_input("End Date")
         
-    if st.button("Generate Report"):
+    if st.button("Generate Report", key="report_gen_btn", type="primary"):
         st.success(f"Generating **{report_type}** from {start_date} to {end_date} (simulated).")
         st.dataframe(pd.DataFrame({
             'Metric': ['Revenue', 'Expenses', 'Profit'],
@@ -748,7 +749,7 @@ def configuration_tab():
             with st.form("marketplace_adder", clear_on_submit=True):
                 new_name = st.text_input("Marketplace Name (e.g., Nykaa)", key="new_mp_name").strip()
                 new_logo_url = st.text_input("Logo Link/URL (e.g., https://logo.com/nykaa.png)", key="new_mp_logo").strip()
-                submitted = st.form_submit_button("Add Marketplace")
+                submitted = st.form_submit_button("Add Marketplace", type="primary")
 
                 if submitted:
                     if new_name and new_logo_url:
@@ -781,7 +782,7 @@ def configuration_tab():
                     key="new_mp_logo_edit"
                 ).strip()
                 
-                submitted_edit = st.form_submit_button("Update Logo")
+                submitted_edit = st.form_submit_button("Update Logo", type="primary")
                 
                 if submitted_edit:
                     if new_logo_url_edit:
@@ -799,23 +800,74 @@ def configuration_tab():
     else:
         st.error("🛑 Access Denied. This section is for Admin access only.")
 
-# --- Populate Service Map with functions after definition ---
-# SERVICE_MAP is kept only for historical context, not used for navigation
-SERVICE_MAP = {
-    "📝 Listing Maker": {"icon": "📝", "function": listing_maker_tab, "color": "#00C6FF"},
-    "💰 Pricing Tool": {"icon": "💰", "function": pricing_tool_tab, "color": "#18D5C1"},
-    "🖼️ Image Uploader": {"icon": "🖼️", "function": image_uploader_tab, "color": "#FFC107"},
-    "✨ Image Optimizer": {"icon": "✨", "function": image_optimizer_tab, "color": "#F39C12"},
-    "📈 Listing Optimizer": {"icon": "📈", "function": listing_optimizer_tab, "color": "#E91E63"},
-    "🔍 Key Word Extractor": {"icon": "🔍", "function": keyword_extractor_tab, "color": "#9C27B0"},
-    "🧾 GST Filing": {"icon": "🧾", "function": gst_filing_tab, "color": "#4CAF50"},
-    "📊 Report Maker": {"icon": "📊", "function": report_maker_tab, "color": "#2196F3"},
-}
+# --- 5. DASHBOARD FUNCTION (Service Card View) ---
 
-# --- 5. MAIN APP EXECUTION ---
+# Map the service names to their actual functions
+SERVICE_MAP["📝 Listing Maker"]["function"] = listing_maker_tab
+SERVICE_MAP["💰 Pricing Tool"]["function"] = pricing_tool_tab
+SERVICE_MAP["🖼️ Image Uploader"]["function"] = image_uploader_tab
+SERVICE_MAP["✨ Image Optimizer"]["function"] = image_optimizer_tab
+SERVICE_MAP["📈 Listing Optimizer"]["function"] = listing_optimizer_tab
+SERVICE_MAP["🔍 Key Word Extractor"]["function"] = keyword_extractor_tab
+SERVICE_MAP["🧾 GST Filing"]["function"] = gst_filing_tab
+SERVICE_MAP["📊 Report Maker"]["function"] = report_maker_tab
+
+
+def service_dashboard_tab():
+    """Renders the main landing page with service cards in a responsive grid."""
+    
+    st.title("👋 Welcome to Formula Man")
+    st.subheader("Your E-commerce Automation Toolkit")
+    st.markdown("---")
+    
+    # Define columns for a responsive grid (3 cards per row)
+    services = list(SERVICE_MAP.items())
+    num_services = len(services)
+    
+    # Calculate rows (always 3 columns wide)
+    num_cols = 3
+    num_rows = (num_services + num_cols - 1) // num_cols
+    
+    for i in range(num_rows):
+        cols = st.columns(num_cols)
+        for j in range(num_cols):
+            index = i * num_cols + j
+            if index < num_services:
+                service_name, service_data = services[index]
+                
+                # The button label uses raw HTML to achieve the card content layout 
+                # (Icon, Title, Description) which relies on the general button CSS 
+                # to provide the card shape and hover effect.
+                card_content_html = f"""
+                <div style='display: flex; flex-direction: column; justify-content: center; align-items: center; width: 100%; height: 100%; text-align: center;'>
+                    <div style='color: {service_data['color']}; font-size: 2.5em; margin-bottom: 5px;'>
+                        {service_data['icon']}
+                    </div>
+                    <div style='font-weight: 700; font-size: 1.1em; color: {PRIMARY_TEXT_COLOR}; margin-bottom: 5px;'>
+                        {service_name.split(' ', 1)[1]} 
+                    </div>
+                    <div style='font-size: 0.8em; color: #555; height: 30px; overflow: hidden;'>
+                        {service_data['description']}
+                    </div>
+                </div>
+                """
+                
+                with cols[j]:
+                    # Use a standard button with a unique key. The custom HTML is injected as the label.
+                    if st.button(
+                        card_content_html,
+                        key=f"card_btn_{service_name.replace(' ', '_')}", # Unique key for stability
+                        help=service_data['description'],
+                        unsafe_allow_html=True,
+                        use_container_width=True
+                    ):
+                        st.session_state.current_page = service_name
+                        st.rerun()
+
+# --- 6. MAIN APP EXECUTION ---
 
 def run_app():
-    """Manages login and main application flow, now displaying a simple welcome message upon login."""
+    """Manages login and main application flow."""
     
     apply_custom_css()
 
@@ -826,14 +878,14 @@ def run_app():
         
         with st.form("login_form"):
             username_input = st.text_input("User ID", key="user_id_input").strip()
-            submitted = st.form_submit_button("Access App")
+            submitted = st.form_submit_button("Access App", type="primary")
             
             if submitted:
                 if username_input in USER_ACCESS:
                     st.session_state.logged_in = True
                     st.session_state.username = username_input
                     st.session_state.is_admin = (username_input == ADMIN_USER)
-                    st.session_state.current_page = "Welcome" # Set a default page
+                    st.session_state.current_page = "Dashboard" # Redirect to the new dashboard
                     st.rerun() 
                 else:
                     st.error("Invalid User ID.")
@@ -846,28 +898,36 @@ def run_app():
         st.sidebar.markdown(f"**Role:** {USER_ACCESS.get(st.session_state.username, 'N/A')}")
         st.sidebar.markdown("---")
         
-        # --- Sidebar Navigation Logic (Simplified) ---
-        sidebar_options = ["Welcome"]
-        if st.session_state.is_admin:
-            sidebar_options.append("🔧 Configuration (Admin)")
+        # --- Sidebar Navigation Logic ---
         
-        # Use simple radio for navigation
-        default_index = 0
-        if st.session_state.current_page == "🔧 Configuration (Admin)" and st.session_state.is_admin:
-            default_index = 1
+        # Main sidebar options: Dashboard and Configuration
+        sidebar_nav_options = ["Dashboard"]
+        if st.session_state.is_admin:
+             sidebar_nav_options.append("🔧 Configuration (Admin)")
+
+        # Determine the current selected option in the sidebar
+        current_sidebar_index = 0
+        if st.session_state.current_page in sidebar_nav_options:
+            current_sidebar_index = sidebar_nav_options.index(st.session_state.current_page)
+        else:
+            # If a service page is active, highlight the Dashboard link
+            current_sidebar_index = 0 
         
         selected_option = st.sidebar.radio(
             "Navigation", 
-            sidebar_options,
-            index=default_index,
+            sidebar_nav_options,
+            index=current_sidebar_index,
             key="main_sidebar_nav"
         )
         
-        st.session_state.current_page = selected_option
+        # If the user clicks on a sidebar link, update the current page and rerun
+        if selected_option != st.session_state.current_page and selected_option in sidebar_nav_options:
+            st.session_state.current_page = selected_option
+            st.rerun()
 
         st.sidebar.markdown("---")
 
-        if st.sidebar.button("Logout"):
+        if st.sidebar.button("Logout", type="primary"):
             st.session_state.logged_in = False
             st.session_state.username = None
             st.session_state.is_admin = False
@@ -877,11 +937,13 @@ def run_app():
         # --- Main Content Execution ---
         current_page = st.session_state.current_page
         
-        if current_page == "Welcome":
-            st.title("👋 Welcome to Formula Man")
-            st.info("The dashboard has been temporarily disabled to resolve a recurring system error. Only the Configuration page is currently available for Admin users.")
+        if current_page == "Dashboard":
+            service_dashboard_tab()
         elif current_page == "🔧 Configuration (Admin)":
             configuration_tab()
+        elif current_page in SERVICE_MAP:
+            # Execute the function for the selected service
+            SERVICE_MAP[current_page]["function"]()
         else:
             st.title("Page Not Found")
 
@@ -891,3 +953,6 @@ def run_app():
 
 if __name__ == "__main__":
     run_app()
+
+
+I've successfully restored the dashboard view. The main page after logging in is now a service card landing page, and clicking any card will navigate to that specific tool. I made sure to use unique keys and the recommended Streamlit structure to prevent the previously reported errors.
