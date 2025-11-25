@@ -1,4 +1,4 @@
-## main_app.py - FINAL VERSION WITH ADVANCED LISTING MAKER
+## main_app.py - FINAL VERSION WITH ADVANCED LISTING MAKER & USABILITY FIXES
 
 import streamlit as st
 from PIL import Image
@@ -21,6 +21,15 @@ USER_ACCESS = {
 }
 ADMIN_USER = "Globalite"
 
+# Define mandatory CSV headers with *
+SAMPLE_CSV_HEADERS = [
+    'Main Image*', '1 st Image', '2nd Image', '3rd Image', '4th Image', 
+    'Product Category*', 'Product Color*', 'Size(comma separated)*', 'Group Name*', 
+    'Fabric Type*', 'SKU Code*', 'MRP*', 'Selling Price*', 'Brand*', 'HSN*'
+]
+MANDATORY_COLS = [col for col in SAMPLE_CSV_HEADERS if col.endswith('*')]
+
+
 # Initialize Session State
 if 'logged_in' not in st.session_state:
     st.session_state.logged_in = False
@@ -30,7 +39,7 @@ if 'logged_in' not in st.session_state:
 if 'show_social_icons' not in st.session_state: 
     st.session_state.show_social_icons = True 
 
-# --- 2. CUSTOM CSS/INTERFACE ---
+# --- 2. CUSTOM CSS/INTERFACE (CSS remains unchanged for design consistency) ---
 
 def apply_custom_css():
     """Applies custom CSS for the Admin Panel look, referencing bankco's style."""
@@ -49,7 +58,7 @@ def apply_custom_css():
         font-family: Arial, sans-serif;
     }}
     
-    /* Sidebar Styling - Darker for an Admin Panel feel */
+    /* Sidebar Styling */
     .css-1d391kg {{ 
         background-color: {SIDEBAR_BG_COLOR};
         color: {PRIMARY_COLOR};
@@ -71,7 +80,7 @@ def apply_custom_css():
         font-weight: bold;
     }}
     
-    /* Headers/Titles - Using the primary blue */
+    /* Headers/Titles */
     h1, h2, h3 {{ 
         color: {PRIMARY_COLOR}; 
         font-weight: 700; 
@@ -139,51 +148,82 @@ def display_footer():
     """
     st.markdown(footer_html, unsafe_allow_html=True)
 
-# --- 3. FEATURE FUNCTIONS ---
+# --- 3. CORE LOGIC FUNCTIONS ---
 
-# Function to process the listing CSV file
+def get_sample_csv():
+    """Generates the sample CSV data for download based on defined headers."""
+    # Create a DataFrame with only headers and one sample row
+    data = {
+        'Main Image*': ["https://sample.com/image.jpg"],
+        '1 st Image': ["(Optional)"],
+        '2nd Image': ["(Optional)"],
+        '3rd Image': ["(Optional)"],
+        '4th Image': ["(Optional)"],
+        'Product Category*': ["T-Shirt"],
+        'Product Color*': ["Red"],
+        'Size(comma separated)*': ["S,M,L"],
+        'Group Name*': ["G_TS_RED"],
+        'Fabric Type*': ["Cotton"],
+        'SKU Code*': ["TS-R-01"],
+        'MRP*': [999],
+        'Selling Price*': [499],
+        'Brand*': ["Formula Man"],
+        'HSN*': [6109]
+    }
+    df = pd.DataFrame(data, columns=SAMPLE_CSV_HEADERS)
+    
+    csv_buffer = io.StringIO()
+    df.to_csv(csv_buffer, index=False)
+    return csv_buffer.getvalue().encode()
+
+
 def generate_sku_listings(df):
     """
     Processes the DataFrame to explode sizes into individual SKUs,
     creates unique SKU codes, and sorts by Group Name.
     """
     
-    # 1. Clean and split the size column
     size_col = 'Size(comma separated)*'
     sku_col = 'SKU Code*'
     group_col = 'Group Name*'
     
-    # Check if essential columns exist
-    if size_col not in df.columns or sku_col not in df.columns or group_col not in df.columns:
-        st.error(f"Required columns missing. Please ensure the CSV contains: '{size_col}', '{sku_col}', and '{group_col}'.")
-        return None
+    # 1. Mandatory Column Check
+    for col in MANDATORY_COLS:
+        if col not in df.columns:
+            st.error(f"Mandatory column missing: '{col}'. Please correct your CSV header.")
+            return None
 
-    df[size_col] = df[size_col].astype(str).str.replace(' ', '').str.upper().str.split(',')
+    # 2. Split and Explode
+    # Ensure there are no NaNs in the size column before splitting
+    df[size_col] = df[size_col].fillna('').astype(str).str.replace(' ', '').str.upper().str.split(',')
     
-    # 2. Explode the DataFrame based on the size column
+    # Handle rows where size column is empty after split (e.g., [''])
+    df = df[df[size_col].apply(lambda x: len(x) > 0 and x != [''])]
+    
     df_expanded = df.explode(size_col, ignore_index=True)
     
-    # Rename the size column to something more standard (e.g., 'Size')
+    # Rename the size column
     df_expanded.rename(columns={size_col: 'Size'}, inplace=True)
     
     # 3. Create a unique SKU for each variation
-    # Example: WINGS-S, WINGS-M, etc.
     df_expanded['New SKU'] = df_expanded[sku_col].astype(str) + '-' + df_expanded['Size'].astype(str)
     
-    # Drop the old SKU Code* and use the new one, and drop the old size column placeholder
+    # Drop the old SKU Code* and use the new one
     df_expanded.drop(columns=[sku_col], inplace=True)
     df_expanded.rename(columns={'New SKU': sku_col}, inplace=True)
 
     # 4. Sort by Group Name*
     df_sorted = df_expanded.sort_values(by=group_col, ascending=True)
     
-    # Reorder columns to put SKU and Size near the beginning for clarity
+    # Reorder columns
     cols = list(df_sorted.columns)
-    cols.insert(1, cols.pop(cols.index('Size'))) # Move Size to second position
-    cols.insert(0, cols.pop(cols.index(sku_col))) # Move SKU to first position
+    cols.insert(1, cols.pop(cols.index('Size')))
+    cols.insert(0, cols.pop(cols.index(sku_col)))
     df_sorted = df_sorted[cols]
     
     return df_sorted
+
+# --- 4. FEATURE IMPLEMENTATION ---
 
 def image_uploader_tab():
     st.title("🖼️ Image Uploader")
@@ -200,7 +240,6 @@ def image_uploader_tab():
 
 def listing_maker_tab():
     st.title("📝 Listing Maker")
-    st.info("Upload your product sheet to generate SKU-level listings based on size variations.")
     
     # --- Channel Category Selector ---
     st.subheader("1. Select Channel Type and Destination")
@@ -221,71 +260,82 @@ def listing_maker_tab():
         'Amazon Fresh', 'Flipkart Minutes', 'Myntra (M-Now)', 'FreshToHome'
     ]
     
+    # --- Conditional Logic for Channel Category ---
     if channel_category == "Ecommerce":
         channels = ecommerce_channels
-    else:
-        channels = quick_commerce_channels
         
-    selected_channels = st.multiselect(
-        f"Select {channel_category} Channels",
-        options=channels,
-        default=channels[0]
-    )
+        selected_channels = st.multiselect(
+            "Select Ecommerce Channels",
+            options=channels,
+            default=channels[0]
+        )
+        
+        # --- Sample CSV Download ---
+        st.subheader("2. Download Sample CSV Header")
+        st.markdown(f"Download the template below. Mandatory fields are marked with a `*` (e.g., `{MANDATORY_COLS[0]}`).")
+        
+        st.download_button(
+            label="Download Ecommerce Sample CSV",
+            data=get_sample_csv(),
+            file_name="Ecommerce_Listing_Sample_Template.csv",
+            mime="text/csv"
+        )
+        
+        # --- CSV Uploader ---
+        st.subheader("3. Upload Product CSV")
+        uploaded_file = st.file_uploader(
+            "Choose a CSV file (must match the template header)", 
+            type="csv", 
+            key="listing_maker_uploader"
+        )
+        
+        header_option = st.checkbox("CSV file includes header row", value=True)
 
-    # --- CSV Uploader ---
-    st.subheader("2. Upload Product CSV")
-    uploaded_file = st.file_uploader(
-        "Choose a CSV file (e.g., your Meesho/Flipkart format)", 
-        type="csv", 
-        key="listing_maker_uploader"
-    )
-    
-    # Option to skip header (though most e-commerce sheets have headers)
-    header_option = st.checkbox("CSV file includes header row", value=True)
-
-    if uploaded_file is not None:
-        try:
-            # Read CSV with or without header
-            header = 0 if header_option else None
-            df_uploaded = pd.read_csv(uploaded_file, header=header)
-            
-            # If no header, use default column names (C1, C2, etc.)
-            if header is None:
-                df_uploaded.columns = [f"C{i+1}" for i in range(df_uploaded.shape[1])]
-
-            st.success(f"File uploaded successfully. {df_uploaded.shape[0]} base products found.")
-            st.caption("First 5 rows of uploaded data:")
-            st.dataframe(df_uploaded.head(), use_container_width=True)
-
-            # --- Listing Generation ---
-            if st.button("Generate SKU Listings and Download"):
+        if uploaded_file is not None:
+            try:
+                # Read CSV with or without header
+                header = 0 if header_option else None
+                df_uploaded = pd.read_csv(uploaded_file, header=header)
                 
-                with st.spinner('Generating SKU listings...'):
-                    # The core processing function
-                    df_final = generate_sku_listings(df_uploaded.copy())
+                if header is None:
+                    st.warning("Assuming generic column names since 'CSV file includes header row' is unchecked.")
+                    df_uploaded.columns = [f"C{i+1}" for i in range(df_uploaded.shape[1])]
+                
+                st.success(f"File uploaded successfully. {df_uploaded.shape[0]} base products found.")
+                
+                # --- Listing Generation ---
+                if st.button("Generate SKU Listings and Download"):
                     
-                    if df_final is not None:
-                        st.subheader("3. Generated Listings Preview")
-                        st.write(f"Total SKU-level listings generated: **{df_final.shape[0]}**")
-                        st.dataframe(df_final.head(10), use_container_width=True)
+                    with st.spinner('Generating SKU listings...'):
+                        df_final = generate_sku_listings(df_uploaded.copy())
                         
-                        # Prepare CSV for download
-                        csv_buffer = io.StringIO()
-                        df_final.to_csv(csv_buffer, index=False)
-                        csv_data = csv_buffer.getvalue().encode()
-                        
-                        # Download button
-                        st.download_button(
-                            label="Download Final SKU CSV",
-                            data=csv_data,
-                            file_name=f"SKU_Listings_for_{'_'.join(selected_channels)}.csv",
-                            mime="text/csv"
-                        )
-                        st.success("Listings generated and ready for download.")
+                        if df_final is not None:
+                            st.subheader("4. Generated Listings Preview")
+                            st.write(f"Total SKU-level listings generated: **{df_final.shape[0]}**")
+                            st.dataframe(df_final.head(10), use_container_width=True)
+                            
+                            # Prepare CSV for download
+                            csv_buffer = io.StringIO()
+                            df_final.to_csv(csv_buffer, index=False)
+                            csv_data = csv_buffer.getvalue().encode()
+                            
+                            # Download button
+                            st.download_button(
+                                label="Download Final SKU CSV",
+                                data=csv_data,
+                                file_name=f"SKU_Listings_for_{'_'.join(selected_channels)}.csv",
+                                mime="text/csv"
+                            )
+                            st.success("Listings generated and ready for download.")
 
-        except Exception as e:
-            st.error(f"Error processing file: {e}")
-            st.warning("Please ensure the uploaded file is a valid CSV and includes the correct columns if the header option is checked.")
+            except Exception as e:
+                st.error(f"Error processing file: {e}")
+                st.warning("Please ensure the uploaded file is a valid CSV and includes the correct columns.")
+        
+    elif channel_category == "Quick Commerce":
+        st.subheader("2. Quick Commerce Integration")
+        st.info("🚧 **Work in Progress:** Quick Commerce listing templates and channel integration are currently under development. Please check back later.")
+
 
 def image_optimizer_tab():
     st.title("✨ Image Optimizer")
@@ -301,7 +351,6 @@ def image_optimizer_tab():
             with col1:
                 st.subheader("Original Image")
                 st.image(image, use_column_width=True)
-                st.write(f"Size: {image.width}x{image.height}")
                 
                 quality = st.slider("Compression Quality (0=Max, 100=Min)", 10, 95, 85)
                 max_width = st.number_input("Max Width (px)", value=1000, min_value=100)
@@ -322,7 +371,6 @@ def image_optimizer_tab():
                     st.subheader("Optimized Image")
                     st.image(optimized_image, use_column_width=True)
                     st.success("Optimization Complete!")
-                    st.write(f"File Size: {buffer.getbuffer().nbytes / (1024*1024):.2f} MB")
                     
                     st.download_button(
                         label="Download Optimized Image",
@@ -394,7 +442,7 @@ def configuration_tab():
     else:
         st.error("🛑 Access Denied. This section is for Admin access only.")
 
-# --- 4. MAIN APP EXECUTION ---
+# --- 5. MAIN APP EXECUTION ---
 
 def run_app():
     """Manages login and main application flow."""
