@@ -1,4 +1,4 @@
-## main_app.py - TAB BASED INTERFACE & SOCIAL ICONS
+## main_app.py - SIDEBAR NAVIGATION & ADMIN PANEL LOOK
 
 import streamlit as st
 from PIL import Image
@@ -8,7 +8,7 @@ import base64
 
 # --- 1. CONFIGURATION AND INITIAL SETUP ---
 st.set_page_config(
-    page_title="E-commerce Solution App",
+    page_title="E-commerce Admin Panel",
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -27,30 +27,72 @@ if 'logged_in' not in st.session_state:
     st.session_state.is_admin = False
     
 # FIX: Initialize the show_social_icons state outside the logged_in check
-# This ensures it exists before the configuration_tab tries to read it.
 if 'show_social_icons' not in st.session_state: 
-    st.session_state.show_social_icons = True
-    
+    st.session_state.show_social_icons = True 
+
 # --- 2. CUSTOM CSS/INTERFACE ---
 
 def apply_custom_css():
-    """Applies custom CSS for styling and social icon display."""
+    """Applies custom CSS for the Admin Panel look, referencing bankco's style."""
     
-    PRIMARY_COLOR = "#007bff" 
-    BACKGROUND_COLOR = "#ffffff"
-    SECONDARY_BACKGROUND_COLOR = "#f7f7f7" 
-    TEXT_COLOR = "#333333"
+    # Colors inspired by the reference site (White BG, Blue/Navy Accents)
+    PRIMARY_COLOR = "#0A2463"         # Dark Navy Blue for accents/text
+    BACKGROUND_COLOR = "#ffffff"     # White Main Background
+    SIDEBAR_BG_COLOR = "#f0f0f0"     # Light Gray for Sidebar Background
+    ACCENT_BLUE = "#007bff"          # Lighter Blue for buttons/highlights
 
     custom_css = f"""
     <style>
     /* Global Styling */
-    .stApp {{ background-color: {BACKGROUND_COLOR}; color: {TEXT_COLOR}; }}
-    .css-1d391kg {{ background-color: {SECONDARY_BACKGROUND_COLOR}; }}
-    h1, h2, h3 {{ color: {PRIMARY_COLOR}; font-weight: 600; border-bottom: 2px solid {SECONDARY_BACKGROUND_COLOR}; padding-bottom: 5px; margin-top: 15px; }}
+    .stApp {{
+        background-color: {BACKGROUND_COLOR};
+        color: {PRIMARY_COLOR};
+        font-family: Arial, sans-serif;
+    }}
     
+    /* Sidebar Styling - Darker for an Admin Panel feel */
+    .css-1d391kg {{ 
+        background-color: {SIDEBAR_BG_COLOR};
+        color: {PRIMARY_COLOR};
+    }}
+    
+    /* Sidebar Radio Button Styling (Navigation Links) */
+    .stRadio > label {{
+        padding: 8px 15px;
+        margin: 5px 0;
+        border-radius: 5px;
+        color: {PRIMARY_COLOR};
+        font-size: 1.1em;
+        font-weight: 500;
+        transition: background-color 0.2s, color 0.2s;
+    }}
+    .stRadio > label:has(input:checked) {{
+        background-color: {ACCENT_BLUE} !important;
+        color: white !important;
+        font-weight: bold;
+    }}
+    
+    /* Headers/Titles - Using the primary blue */
+    h1, h2, h3 {{ 
+        color: {PRIMARY_COLOR}; 
+        font-weight: 700; 
+        border-bottom: 2px solid {ACCENT_BLUE}; 
+        padding-bottom: 5px; 
+        margin-top: 15px; 
+    }}
+
     /* Primary Buttons */
-    .stButton>button {{ background-color: {PRIMARY_COLOR}; color: white; border: none; padding: 10px 20px; border-radius: 5px; transition: background-color 0.3s; }}
-    .stButton>button:hover {{ background-color: #0056b3; }}
+    .stButton>button {{ 
+        background-color: {ACCENT_BLUE}; 
+        color: white; 
+        border: none; 
+        padding: 10px 20px; 
+        border-radius: 3px; /* Sharper corners */
+        transition: background-color 0.3s; 
+    }}
+    .stButton>button:hover {{ 
+        background-color: #0056b3; 
+    }}
     
     /* Footer Style */
     .footer {{
@@ -58,8 +100,8 @@ def apply_custom_css():
         bottom: 0;
         left: 0;
         width: 100%;
-        background-color: {SECONDARY_BACKGROUND_COLOR};
-        color: {TEXT_COLOR};
+        background-color: {SIDEBAR_BG_COLOR};
+        color: {PRIMARY_COLOR};
         text-align: center;
         padding: 10px;
         font-size: 0.8em;
@@ -67,7 +109,7 @@ def apply_custom_css():
         z-index: 100;
     }}
     .social-icons a {{
-        color: {PRIMARY_COLOR};
+        color: {ACCENT_BLUE};
         margin: 0 10px;
         font-size: 1.2em;
         text-decoration: none;
@@ -76,12 +118,9 @@ def apply_custom_css():
     """
     st.markdown(custom_css, unsafe_allow_html=True)
 
-# main_app.py (Updated display_footer function)
-
 def display_footer():
     """Displays the required footer credit and social icons."""
     
-    # Simple social icons using emojis and basic HTML structure
     social_icons_html = ""
     if st.session_state.show_social_icons:
         social_icons_html = """
@@ -93,7 +132,6 @@ def display_footer():
         </div>
         """
 
-    # FIX: Replaced HTML entity &copy; with the actual symbol ©
     footer_html = f"""
     <div class="footer">
         {social_icons_html}
@@ -105,10 +143,10 @@ def display_footer():
 # --- 3. FEATURE FUNCTIONS (UNCHANGED FUNCTIONALITY) ---
 
 def image_uploader_tab():
-    st.header("🖼️ Image Uploader")
+    st.title("🖼️ Image Uploader")
     st.info("Upload and review your product images before processing.")
     uploaded_file = st.file_uploader("Choose an image...", type=["jpg", "jpeg", "png"])
-    
+    # ... rest of the image_uploader_tab logic ...
     if uploaded_file is not None:
         try:
             image = Image.open(uploaded_file)
@@ -118,9 +156,9 @@ def image_uploader_tab():
             st.error(f"Error loading image: {e}")
 
 def listing_maker_tab():
-    st.header("📝 Listing Maker")
+    st.title("📝 Listing Maker")
     st.info("Generate or manually input product details for your e-commerce platform.")
-    
+    # ... rest of the listing_maker_tab logic ...
     product_title = st.text_input("Product Title (Required)")
     description = st.text_area("Product Description")
     category = st.selectbox("Category", ["Electronics", "Clothing", "Home Goods", "Other"])
@@ -137,9 +175,9 @@ def listing_maker_tab():
             st.warning("Please enter a Product Title.")
 
 def image_optimizer_tab():
-    st.header("✨ Image Optimizer")
+    st.title("✨ Image Optimizer")
     st.info("Compress and resize images to improve page load times.")
-    
+    # ... rest of the image_optimizer_tab logic ...
     uploaded_file = st.file_uploader("Upload Image to Optimize", type=["jpg", "jpeg", "png"], key="optimizer_uploader")
     
     if uploaded_file is not None:
@@ -182,11 +220,10 @@ def image_optimizer_tab():
         except Exception as e:
             st.error(f"An error occurred during optimization: {e}")
 
-
 def listing_optimizer_tab():
-    st.header("📈 Listing Optimizer")
+    st.title("📈 Listing Optimizer")
     st.info("Analyze and improve your current product listing text for better conversion and SEO.")
-    
+    # ... rest of the listing_optimizer_tab logic ...
     listing_text = st.text_area("Paste your current product listing description here:", height=300)
     
     if st.button("Analyze & Suggest Improvements"):
@@ -202,9 +239,9 @@ def listing_optimizer_tab():
             st.warning("Please paste some listing text to analyze.")
             
 def keyword_extractor_tab():
-    st.header("🔍 Key Word Extractor")
+    st.title("🔍 Key Word Extractor")
     st.info("Extract relevant, high-ranking keywords from competitors or product ideas.")
-    
+    # ... rest of the keyword_extractor_tab logic ...
     seed_phrase = st.text_input("Enter a seed phrase or competitor's product name:")
     
     if st.button("Extract Keywords"):
@@ -223,7 +260,7 @@ def keyword_extractor_tab():
             st.warning("Please enter a seed phrase.")
 
 def configuration_tab():
-    st.header("🔧 Configuration (Admin Only)")
+    st.title("🔧 Configuration (Admin Only)")
     if st.session_state.is_admin:
         st.success(f"Welcome Admin **{st.session_state.username}**. You have full access.")
         
@@ -233,7 +270,7 @@ def configuration_tab():
         st.session_state.show_social_icons = st.toggle(
             "Show Social Media Icons in Footer", 
             value=st.session_state.show_social_icons, 
-            help="Toggle visibility of the Twitter, LinkedIn, and GitHub links in the app footer."
+            help="Toggle visibility of the social links in the app footer."
         )
 
         st.subheader("User Management (Placeholder)")
@@ -266,15 +303,33 @@ def run_app():
                     st.session_state.logged_in = True
                     st.session_state.username = username_input
                     st.session_state.is_admin = (username_input == ADMIN_USER)
-                    # We use st.switch_page or st.rerun() here to transition to the main app view
                     st.rerun() 
                 else:
                     st.error("Invalid User ID.")
         
     # --- B. MAIN APPLICATION INTERFACE (After Login) ---
     else:
-        st.sidebar.header(f"👋 Welcome, {st.session_state.username}")
-        st.sidebar.markdown(f"**Access Level:** {USER_ACCESS.get(st.session_state.username, 'N/A')}")
+        # Define tabs list dynamically
+        tabs_map = {
+            "🖼️ Image Uploader": image_uploader_tab,
+            "📝 Listing Maker": listing_maker_tab,
+            "✨ Image Optimizer": image_optimizer_tab,
+            "📈 Listing Optimizer": listing_optimizer_tab,
+            "🔍 Key Word Extractor": keyword_extractor_tab,
+        }
+        
+        # Add Admin tab if user is admin
+        if st.session_state.is_admin:
+            tabs_map["🔧 Configuration (Admin)"] = configuration_tab
+
+        # Sidebar Header
+        st.sidebar.markdown(f"# **{st.session_state.username}'s Dashboard**")
+        st.sidebar.markdown(f"**Role:** {USER_ACCESS.get(st.session_state.username, 'N/A')}")
+        st.sidebar.markdown("---")
+        
+        # Sidebar Navigation (Radio buttons replace tabs)
+        selected_option = st.sidebar.radio("Navigation", list(tabs_map.keys()))
+        
         st.sidebar.markdown("---")
         
         if st.sidebar.button("Logout"):
@@ -283,36 +338,8 @@ def run_app():
             st.session_state.is_admin = False
             st.rerun()
 
-        # Define tabs list dynamically, ensuring Admin tab is last
-        tabs_list = [
-            "Image Uploader",
-            "Listing Maker",
-            "Image Optimizer",
-            "Listing Optimizer",
-            "Key Word Extractor",
-        ]
-        if st.session_state.is_admin:
-            tabs_list.append("Configuration (Admin)")
-
-        # Create the tabs
-        tab_uploader, tab_listing_maker, tab_img_opt, tab_list_opt, tab_keywords, *optional_tab = st.tabs(tabs_list)
-
-        # --- Tab Content Routing ---
-        with tab_uploader:
-            image_uploader_tab()
-        with tab_listing_maker:
-            listing_maker_tab()
-        with tab_img_opt:
-            image_optimizer_tab()
-        with tab_list_opt:
-            listing_optimizer_tab()
-        with tab_keywords:
-            keyword_extractor_tab()
-        
-        # Configuration tab is only visible and accessible if the user is Admin
-        if st.session_state.is_admin and optional_tab:
-            with optional_tab[0]:
-                configuration_tab()
+        # Execute the function corresponding to the selected option
+        tabs_map[selected_option]()
 
     # Display the required footer credit and social icons
     display_footer()
