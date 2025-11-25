@@ -36,16 +36,16 @@ DEFAULT_MARKETPLACES = {
     "Meesho": "https://images.meesho.com/images/branding/meesho-horizontal-logo.svg"
 }
 
-# Define the SERVICE_MAP with KPI PLACEHOLDER DATA for the new dashboard look
+# Define the SERVICE_MAP with KPI PLACEHOLDER DATA for the dashboard look
 SERVICE_MAP = {
-    "📝 Listing Maker": {"icon": "📝", "function": None, "color": "#4CAF50", "description": "Generated listings last month.", "metric": "1.5K", "metric_label": "New Listings", "trend": "+12%", "trend_color": "#4CAF50", "progress": "85%"},
-    "💰 Pricing Tool": {"icon": "💰", "function": None, "color": "#FFC107", "description": "Processed pricing updates.", "metric": "₹5L", "metric_label": "Price Value", "trend": "+5%", "trend_color": "#4CAF50", "progress": "60%"},
-    "🖼️ Image Uploader": {"icon": "🖼️", "function": None, "color": "#2196F3", "description": "Uploaded images this week.", "metric": "200+", "metric_label": "Images Uploaded", "trend": "+20%", "trend_color": "#4CAF50", "progress": "90%"},
+    "📝 Listing Maker": {"icon": "📝", "function": None, "color": "#00BCD4", "description": "Generated listings last month.", "metric": "1.5K", "metric_label": "New Listings", "trend": "+12%", "trend_color": "#00BCD4", "progress": "85%"},
+    "💰 Pricing Tool": {"icon": "💰", "function": None, "color": "#4CAF50", "description": "Processed pricing updates.", "metric": "₹5L", "metric_label": "Price Value", "trend": "+5%", "trend_color": "#4CAF50", "progress": "60%"},
+    "🖼️ Image Uploader": {"icon": "🖼️", "function": None, "color": "#2196F3", "description": "Uploaded images this week.", "metric": "200+", "metric_label": "Images Uploaded", "trend": "+20%", "trend_color": "#2196F3", "progress": "90%"},
     "✨ Image Optimizer": {"icon": "✨", "function": None, "color": "#F44336", "description": "Optimized batch jobs run.", "metric": "42", "metric_label": "Batch Jobs", "trend": "-3%", "trend_color": "#F44336", "progress": "40%"} ,
-    "📈 Listing Optimizer": {"icon": "📈", "function": None, "color": "#9C27B0", "description": "Descriptions improved.", "metric": "95%", "metric_label": "Conversion Rate", "trend": "+8%", "trend_color": "#4CAF50", "progress": "95%"},
-    "🔍 Key Word Extractor": {"icon": "🔍", "function": None, "color": "#00BCD4", "description": "New keywords identified.", "metric": "850", "metric_label": "Keyword Pool", "trend": "+15%", "trend_color": "#4CAF50", "progress": "75%"},
-    "🧾 GST Filing": {"icon": "🧾", "function": None, "color": "#FF9800", "description": "Pending GST returns.", "metric": "1", "metric_label": "Pending Returns", "trend": "0%", "trend_color": "#9E9E9E", "progress": "100%"},
-    "📊 Report Maker": {"icon": "📊", "function": None, "color": "#607D8B", "description": "Total reports generated.", "metric": "120", "metric_label": "Reports Generated", "trend": "+2%", "trend_color": "#4CAF50", "progress": "70%"},
+    "📈 Listing Optimizer": {"icon": "📈", "function": None, "color": "#9C27B0", "description": "Descriptions improved.", "metric": "95%", "metric_label": "Conversion Rate", "trend": "+8%", "trend_color": "#9C27B0", "progress": "95%"},
+    "🔍 Key Word Extractor": {"icon": "🔍", "function": None, "color": "#FFC107", "description": "New keywords identified.", "metric": "850", "metric_label": "Keyword Pool", "trend": "+15%", "trend_color": "#FFC107", "progress": "75%"},
+    "🧾 GST Filing": {"icon": "🧾", "function": None, "color": "#FF9800", "description": "Pending GST returns.", "metric": "1", "metric_label": "Pending Returns", "trend": "0%", "trend_color": "#FF9800", "progress": "100%"},
+    "📊 Report Maker": {"icon": "📊", "function": None, "color": "#607D8B", "description": "Total reports generated.", "metric": "120", "metric_label": "Reports Generated", "trend": "+2%", "trend_color": "#607D8B", "progress": "70%"},
 }
 
 # Initialize Session State
@@ -61,18 +61,22 @@ if 'marketplace_logos' not in st.session_state:
 if 'current_page' not in st.session_state:
     st.session_state.current_page = "CardViewHome"
 
-# --- 2. CUSTOM CSS/INTERFACE ---
+# --- 2. CUSTOM CSS/INTERFACE (UPDATED FOR FALCON LOOK) ---
 
 # Define global color variables based on the custom CSS
 SIDEBAR_BG_COLOR = "#212838"  
-BACKGROUND_COLOR = "#F8F9FA"  
+BACKGROUND_COLOR = "#F7F9FC"  # Light grey background for main content (Falcon style)
 ACCENT_COLOR = "#00C6FF"      
 PRIMARY_TEXT_COLOR = "#212838" 
 SIDEBAR_TEXT_COLOR = "#FFFFFF" 
 HOVER_COLOR = "#333d4f"       
+CARD_BG_COLOR = "#FFFFFF"
+BORDER_RADIUS = "12px"
+SOFT_SHADOW = "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.06)"
+
 
 def apply_custom_css():
-    """Applies custom CSS for the modern dashboard look, service boxes, and the logout button."""
+    """Applies custom CSS for the modern Falcon-style dashboard look."""
     
     custom_css = f"""
     <style>
@@ -83,7 +87,7 @@ def apply_custom_css():
         font-family: 'Roboto', sans-serif;
     }}
     
-    /* Sidebar Styling - Targeted class for the Streamlit sidebar */
+    /* Sidebar Styling - Keeping dark sidebar for contrast but updating text */
     .css-1d391kg, .css-1dp5f7e {{ 
         background-color: {SIDEBAR_BG_COLOR};
         color: {SIDEBAR_TEXT_COLOR};
@@ -94,11 +98,11 @@ def apply_custom_css():
         color: {SIDEBAR_TEXT_COLOR} !important;
     }}
 
-    /* Sidebar Radio Button Styling (Navigation Links) */
+    /* Sidebar Radio Button Styling (Navigation Links) - Softer look */
     .stRadio > label {{
         padding: 10px 15px;
         margin: 5px 0;
-        border-radius: 5px;
+        border-radius: 8px; /* Slightly rounded for navigation */
         color: {SIDEBAR_TEXT_COLOR};
         font-size: 1.0em;
         font-weight: 400;
@@ -116,14 +120,11 @@ def apply_custom_css():
         font-weight: 600;
         border-left: 3px solid {ACCENT_COLOR} !important; 
     }}
-    .stRadio > label:has(input:checked) > div:first-child {{
-        color: {ACCENT_COLOR} !important; 
-    }}
 
     /* --- Logout Button Style --- */
     .stApp .stSidebar .stButton button {{
         background-color: transparent; 
-        color: #FF6B6B; /* Light Red for attention */
+        color: #FF6B6B; 
         border: 1px solid #FF6B6B;
         padding: 5px 15px;
         font-size: 0.9em;
@@ -133,6 +134,7 @@ def apply_custom_css():
         transition: all 0.2s;
         box-shadow: none;
         transform: none;
+        border-radius: 8px; /* Rounded button */
     }}
     .stApp .stSidebar .stButton button:hover {{
         background-color: #FF6B6B;
@@ -144,34 +146,45 @@ def apply_custom_css():
     h1, h2, h3 {{ 
         color: {PRIMARY_TEXT_COLOR}; 
         font-weight: 700; 
-        border-bottom: none; 
-        padding-bottom: 0; 
-        margin-top: 20px; 
     }}
 
-    /* --- NEW: KPI Card Container Styling (Applied to the button element) --- */
+    /* Input Fields (Text inputs, select boxes, etc.) - Rounded edges */
+    .stTextInput>div>div>input, .stSelectbox>div>div>div, 
+    .stTextArea>div>div>textarea, .stFileUploader>div>div,
+    .stDateInput>div>div>div {{
+        border-radius: 8px;
+        border: 1px solid #dce4e9;
+        box-shadow: none;
+        transition: border 0.2s;
+    }}
+    .stTextInput>div>div>input:focus, .stTextArea>div>div>textarea:focus {{
+        border-color: {ACCENT_COLOR};
+        box-shadow: 0 0 0 0.2rem rgba(0, 198, 255, 0.25);
+    }}
+
+    /* --- KPI Card Container Styling (Applied to the button element) --- */
     .stApp .stButton>button {{
-        /* Base Card Look - White background, subtle shadow */
-        background-color: #FFFFFF; 
+        /* Falcon Card Look */
+        background-color: {CARD_BG_COLOR}; 
         color: {PRIMARY_TEXT_COLOR};
-        border: none; /* Remove border, rely on shadow */
-        padding: 0; /* Remove internal padding for controlled inner spacing */
+        border: none; 
+        padding: 0; 
         width: 100%;
-        height: 120px; /* Fixed height for KPI look */
-        border-radius: 8px; 
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Subtle shadow for elevation */
+        height: 120px; 
+        border-radius: {BORDER_RADIUS}; /* Highly Rounded Corners */
+        box-shadow: {SOFT_SHADOW}; /* Subtle Shadow */
         transition: transform 0.2s, box-shadow 0.2s;
-        display: block; /* Important for inner content control */
-        text-align: left; /* Text alignment within the card */
+        display: block; 
+        text-align: left; 
         line-height: 1.2;
         overflow: hidden;
     }}
     
     /* KPI Card Hover Effect */
     .stApp .stButton>button:hover {{
-        transform: translateY(-2px); 
-        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15); /* Lifted shadow */
-        background-color: #FFFFFF; /* Keep background white */
+        transform: translateY(-3px); /* Slightly more lift */
+        box-shadow: 0 8px 15px -3px rgba(0, 0, 0, 0.2), 0 4px 6px -4px rgba(0, 0, 0, 0.1); 
+        background-color: {CARD_BG_COLOR}; 
     }}
     
     /* --- Inner KPI Card Layout (Used within the button HTML) --- */
@@ -186,40 +199,42 @@ def apply_custom_css():
         flex-grow: 1;
         display: flex;
         flex-direction: column;
-        justify-content: space-between;
+        justify-content: flex-start; /* Align text items to the top */
     }}
     
     .kpi-icon-area {{
         font-size: 2.2em;
         width: 50px;
         height: 50px;
-        border-radius: 50%;
+        border-radius: 50%; /* Rounded Icon Background */
         display: flex;
         align-items: center;
         justify-content: center;
         margin-left: 10px;
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Subtle shadow on icon */
         color: white; 
     }}
 
     .kpi-metric-number {{
-        font-size: 1.8em;
+        font-size: 1.7em;
         font-weight: 700;
         line-height: 1;
+        margin-top: 5px; /* Spacing below title */
     }}
     
     .kpi-metric-title {{
         font-size: 0.8em;
-        color: #757575; /* Gray text for label */
+        color: #6C757D; /* Muted gray text for label */
         font-weight: 500;
-        margin-top: -5px;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
     }}
 
     .kpi-footer {{
         padding: 5px 15px;
-        border-top: 1px solid #f0f0f0;
+        border-top: 1px solid #e9ecef; /* Very light separator */
         font-size: 0.75em;
-        color: #757575;
+        color: #6C757D;
         display: flex;
         justify-content: space-between;
         align-items: center;
@@ -229,17 +244,18 @@ def apply_custom_css():
         font-weight: 600;
     }}
 
-    /* Revert Streamlit Primary Button for functional buttons */
+    /* Revert Streamlit Primary Button for functional buttons - Rounded */
     .stApp .stButton button[data-testid*="primaryButton"] {{
         background-color: {ACCENT_COLOR}; 
-        color: {SIDEBAR_BG_COLOR}; 
+        color: {CARD_BG_COLOR}; 
         border: none; 
         padding: 10px 20px; 
         box-shadow: none;
         height: auto;
         transform: none; 
-        border-radius: 5px;
+        border-radius: 8px; /* Rounded functional buttons */
         display: inline-flex;
+        transition: background-color 0.2s;
     }}
     .stApp .stButton button[data-testid*="primaryButton"]:hover {{
         background-color: #00B1E6;
@@ -249,6 +265,15 @@ def apply_custom_css():
     /* Hide the ugly radio button dot in the sidebar */
     .stRadio > label > div:first-child {{
         display: none !important;
+    }}
+
+    /* Ensure Streamlit containers (like metric cards) are also rounded */
+    .stAlert, .stMarkdown, .stTable, .stDataFrame, .stExpander {{
+        border-radius: {BORDER_RADIUS};
+        box-shadow: {SOFT_SHADOW};
+        padding: 1rem;
+        background-color: {CARD_BG_COLOR};
+        border: none;
     }}
 
     /* Main Content Headers */
@@ -265,7 +290,9 @@ def display_footer():
     
     footer_html = f"""
     <div class="footer">
-        <p style="margin: 0;">Made in Bharat | &copy; 2025 - Formula Man. All rights reserved.</p>
+        <p style="margin: 20px 0 0 0; font-size: 0.75em; color: #6C757D; text-align: center;">
+            Made in Bharat | &copy; 2025 - Formula Man. All rights reserved.
+        </p>
     </div>
     """
     st.markdown(footer_html, unsafe_allow_html=True)
@@ -660,8 +687,10 @@ def image_uploader_tab():
             with col1:
                 st.subheader("Original Image")
                 st.image(image, use_column_width=True)
-                quality = st.slider("Compression Quality (0=Max, 100=Min)", 10, 95, 85)
-                max_width = st.number_input("Max Width (px)", value=1000, min_value=100)
+                # Ensure this container is also styled with rounded corners/shadow (will be applied via st.container or st.expander in a real app)
+                with st.container():
+                    quality = st.slider("Compression Quality (0=Max, 100=Min)", 10, 95, 85)
+                    max_width = st.number_input("Max Width (px)", value=1000, min_value=100)
             if st.button("Optimize Image", key="optimize_image_btn", type="primary"):
                 if image.width > max_width:
                     ratio = max_width / image.width
@@ -743,13 +772,15 @@ def gst_filing_tab():
     st.info("Simplify your monthly and quarterly GST compliance, reconciliation, and filing process.")
     
     st.subheader("GST Filing Status")
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        st.metric("Pending Returns", "GSTR-1 (Oct)", "1 month due")
-    with col2:
-        st.metric("Last Filed Date", "2025-10-20", "GSTR-3B")
-    with col3:
-        st.metric("Input Tax Credit (ITC)", "₹1,25,000", "Simulated")
+    # Using st.container to apply Falcon styling via global CSS
+    with st.container():
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            st.metric("Pending Returns", "GSTR-1 (Oct)", "1 month due")
+        with col2:
+            st.metric("Last Filed Date", "2025-10-20", "GSTR-3B")
+        with col3:
+            st.metric("Input Tax Credit (ITC)", "₹1,25,000", "Simulated")
     
     st.markdown("---")
     st.subheader("Upload Data for Reconciliation")
@@ -911,7 +942,7 @@ def service_dashboard_tab():
                     <div class='kpi-container'>
                         <div class='kpi-details'>
                             <div class='kpi-metric-title'>{metric_label}</div>
-                            <div class='kpi-metric-number' style='color: {color};'>{metric}</div>
+                            <div class='kpi-metric-number' style='color: {PRIMARY_TEXT_COLOR};'>{metric}</div>
                         </div>
                         <div class='kpi-icon-area' style='background-color: {color};'>
                             {icon}
