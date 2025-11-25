@@ -36,16 +36,16 @@ DEFAULT_MARKETPLACES = {
     "Meesho": "https://images.meesho.com/images/branding/meesho-horizontal-logo.svg"
 }
 
-# Define the SERVICE_MAP with new descriptions for the dashboard cards
+# Define the SERVICE_MAP with KPI PLACEHOLDER DATA for the new dashboard look
 SERVICE_MAP = {
-    "📝 Listing Maker": {"icon": "📝", "function": None, "color": "#00C6FF", "description": "Generate error-free bulk product listings for e-commerce."},
-    "💰 Pricing Tool": {"icon": "💰", "function": None, "color": "#18D5C1", "description": "Calculate competitive selling prices and update marketplace files."},
-    "🖼️ Image Uploader": {"icon": "🖼️", "function": None, "color": "#FFC107", "description": "Quickly upload, preview, and manage single product images."},
-    "✨ Image Optimizer": {"icon": "✨", "function": None, "color": "#F39C12", "description": "Bulk optimize images by resizing and compressing for web."} ,
-    "📈 Listing Optimizer": {"icon": "📈", "function": None, "color": "#E91E63", "description": "Improve descriptions for better conversion, SEO, and visibility."},
-    "🔍 Key Word Extractor": {"icon": "🔍", "function": None, "color": "#9C27B0", "description": "Find relevant, high-ranking keywords for your product titles."},
-    "🧾 GST Filing": {"icon": "🧾", "function": None, "color": "#4CAF50", "description": "Simplify monthly GST compliance, reconciliation, and filing."},
-    "📊 Report Maker": {"icon": "📊", "function": None, "color": "#2196F3", "description": "Generate custom sales, inventory, and business intelligence reports."},
+    "📝 Listing Maker": {"icon": "📝", "function": None, "color": "#4CAF50", "description": "Generated listings last month.", "metric": "1.5K", "metric_label": "New Listings", "trend": "+12%", "trend_color": "#4CAF50", "progress": "85%"},
+    "💰 Pricing Tool": {"icon": "💰", "function": None, "color": "#FFC107", "description": "Processed pricing updates.", "metric": "₹5L", "metric_label": "Price Value", "trend": "+5%", "trend_color": "#4CAF50", "progress": "60%"},
+    "🖼️ Image Uploader": {"icon": "🖼️", "function": None, "color": "#2196F3", "description": "Uploaded images this week.", "metric": "200+", "metric_label": "Images Uploaded", "trend": "+20%", "trend_color": "#4CAF50", "progress": "90%"},
+    "✨ Image Optimizer": {"icon": "✨", "function": None, "color": "#F44336", "description": "Optimized batch jobs run.", "metric": "42", "metric_label": "Batch Jobs", "trend": "-3%", "trend_color": "#F44336", "progress": "40%"} ,
+    "📈 Listing Optimizer": {"icon": "📈", "function": None, "color": "#9C27B0", "description": "Descriptions improved.", "metric": "95%", "metric_label": "Conversion Rate", "trend": "+8%", "trend_color": "#4CAF50", "progress": "95%"},
+    "🔍 Key Word Extractor": {"icon": "🔍", "function": None, "color": "#00BCD4", "description": "New keywords identified.", "metric": "850", "metric_label": "Keyword Pool", "trend": "+15%", "trend_color": "#4CAF50", "progress": "75%"},
+    "🧾 GST Filing": {"icon": "🧾", "function": None, "color": "#FF9800", "description": "Pending GST returns.", "metric": "1", "metric_label": "Pending Returns", "trend": "0%", "trend_color": "#9E9E9E", "progress": "100%"},
+    "📊 Report Maker": {"icon": "📊", "function": None, "color": "#607D8B", "description": "Total reports generated.", "metric": "120", "metric_label": "Reports Generated", "trend": "+2%", "trend_color": "#4CAF50", "progress": "70%"},
 }
 
 # Initialize Session State
@@ -120,8 +120,7 @@ def apply_custom_css():
         color: {ACCENT_COLOR} !important; 
     }}
 
-    /* --- NEW: Logout Button Style (Targeting default buttons in the sidebar) --- */
-    /* Note: Since we removed type="primary" from the logout button, it is now a default button. */
+    /* --- Logout Button Style --- */
     .stApp .stSidebar .stButton button {{
         background-color: transparent; 
         color: #FF6B6B; /* Light Red for attention */
@@ -140,9 +139,7 @@ def apply_custom_css():
         color: {SIDEBAR_BG_COLOR}; 
         border: 1px solid #FF6B6B;
     }}
-    /* -------------------------------------------------------------------------- */
-
-
+    
     /* Headers/Titles in Main Content */
     h1, h2, h3 {{ 
         color: {PRIMARY_TEXT_COLOR}; 
@@ -152,35 +149,87 @@ def apply_custom_css():
         margin-top: 20px; 
     }}
 
-    /* Global Button Styling (The card look is now applied generally to all non-primary buttons in the main area) */
+    /* --- NEW: KPI Card Container Styling (Applied to the button element) --- */
     .stApp .stButton>button {{
-        /* Base Card Look for Dashboard and general controls */
+        /* Base Card Look - White background, subtle shadow */
         background-color: #FFFFFF; 
         color: {PRIMARY_TEXT_COLOR};
-        border: 1px solid #e0e0e0; 
-        padding: 20px 10px;
+        border: none; /* Remove border, rely on shadow */
+        padding: 0; /* Remove internal padding for controlled inner spacing */
         width: 100%;
-        height: 160px; 
-        border-radius: 12px; 
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
-        transition: transform 0.3s, box-shadow 0.3s, background-color 0.3s;
+        height: 120px; /* Fixed height for KPI look */
+        border-radius: 8px; 
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Subtle shadow for elevation */
+        transition: transform 0.2s, box-shadow 0.2s;
+        display: block; /* Important for inner content control */
+        text-align: left; /* Text alignment within the card */
+        line-height: 1.2;
+        overflow: hidden;
+    }}
+    
+    /* KPI Card Hover Effect */
+    .stApp .stButton>button:hover {{
+        transform: translateY(-2px); 
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15); /* Lifted shadow */
+        background-color: #FFFFFF; /* Keep background white */
+    }}
+    
+    /* --- Inner KPI Card Layout (Used within the button HTML) --- */
+    .kpi-container {{
+        display: flex;
+        justify-content: space-between;
+        padding: 15px;
+        height: 90px;
+    }}
+
+    .kpi-details {{
+        flex-grow: 1;
         display: flex;
         flex-direction: column;
+        justify-content: space-between;
+    }}
+    
+    .kpi-icon-area {{
+        font-size: 2.2em;
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        display: flex;
         align-items: center;
         justify-content: center;
-        text-align: center;
-        white-space: normal; 
-        line-height: 1.2;
+        margin-left: 10px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        color: white; 
+    }}
+
+    .kpi-metric-number {{
+        font-size: 1.8em;
+        font-weight: 700;
+        line-height: 1;
     }}
     
-    /* Global Button Hover Effect */
-    .stApp .stButton>button:hover {{
-        transform: translateY(-5px); 
-        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
-        background-color: #f7f7f7; 
+    .kpi-metric-title {{
+        font-size: 0.8em;
+        color: #757575; /* Gray text for label */
+        font-weight: 500;
+        margin-top: -5px;
     }}
-    
-    /* Revert Streamlit Primary Button for functional buttons (e.g., Download, Generate) */
+
+    .kpi-footer {{
+        padding: 5px 15px;
+        border-top: 1px solid #f0f0f0;
+        font-size: 0.75em;
+        color: #757575;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }}
+
+    .kpi-trend {{
+        font-weight: 600;
+    }}
+
+    /* Revert Streamlit Primary Button for functional buttons */
     .stApp .stButton button[data-testid*="primaryButton"] {{
         background-color: {ACCENT_COLOR}; 
         color: {SIDEBAR_BG_COLOR}; 
@@ -189,42 +238,23 @@ def apply_custom_css():
         box-shadow: none;
         height: auto;
         transform: none; 
+        border-radius: 5px;
+        display: inline-flex;
     }}
     .stApp .stButton button[data-testid*="primaryButton"]:hover {{
         background-color: #00B1E6;
         box-shadow: none;
     }}
 
-    /* Info Box / Alert for cleaner look */
-    .stAlert.info, .stInfo {{
-        background-color: #E3F2FD; 
-        border-left: 5px solid {ACCENT_COLOR}; 
-        color: #1565C0; 
-    }}
-
-    /* Footer Style - Simple and Centered */
-    .footer {{
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        width: 100%;
-        background-color: {BACKGROUND_COLOR}; 
-        color: {PRIMARY_TEXT_COLOR};
-        font-size: 0.8em;
-        border-top: 1px solid #e0e0e0;
-        z-index: 100;
-        text-align: center; 
-        padding: 10px; 
-    }}
-    
-    /* Ensure marketplace logos are square */
-    .stImage > img {{
-        object-fit: contain;
-    }}
-    
     /* Hide the ugly radio button dot in the sidebar */
     .stRadio > label > div:first-child {{
         display: none !important;
+    }}
+
+    /* Main Content Headers */
+    .stApp .stMarkdown > h1:first-child {{
+        padding-top: 0;
+        margin-top: 0;
     }}
     </style>
     """
@@ -241,6 +271,7 @@ def display_footer():
     st.markdown(footer_html, unsafe_allow_html=True)
 
 # --- 3. CORE LOGIC FUNCTIONS ---
+# (Functions like get_sample_csv, generate_description_mock, generate_sku_listings remain the same)
 
 def get_sample_csv():
     """Generates the sample CSV data for download based on defined headers."""
@@ -835,7 +866,7 @@ SERVICE_MAP["📊 Report Maker"]["function"] = report_maker_tab
 # --- 5. DASHBOARD FUNCTION (Service Card View) ---
 
 def service_dashboard_tab():
-    """Renders the main landing page with service cards in a responsive grid."""
+    """Renders the main landing page with service cards in a responsive 4-column grid, styled as KPIs."""
     
     st.title("👋 Welcome to Formula Man")
     st.subheader("Your E-commerce Automation Toolkit")
@@ -844,38 +875,64 @@ def service_dashboard_tab():
     services = list(SERVICE_MAP.items())
     num_services = len(services)
     
-    # Define columns for a responsive grid (3 cards per row)
-    num_cols = 3
+    # Use 4 columns for a more compact dashboard look
+    num_cols = 4
     num_rows = (num_services + num_cols - 1) // num_cols
     
     for i in range(num_rows):
+        # Using st.columns creates the grid
         cols = st.columns(num_cols)
         for j in range(num_cols):
             index = i * num_cols + j
             if index < num_services:
                 service_name, service_data = services[index]
                 
-                # Use custom HTML for the card content layout (Icon, Title, Description)
+                # Extract data for the KPI style
+                icon = service_name.split(' ')[0] # E.g., '📝'
+                metric = service_data['metric']
+                metric_label = service_data['metric_label']
+                color = service_data['color']
+                trend = service_data['trend']
+                trend_color = service_data['trend_color']
+                progress = service_data['progress']
+                description = service_data['description']
+                
+                # Trend indicator (arrow)
+                if '+' in trend:
+                    trend_icon = '▲'
+                elif '-' in trend:
+                    trend_icon = '▼'
+                else:
+                    trend_icon = '•'
+                
+                # Construct the detailed KPI Card HTML structure
                 card_content_html = f"""
-                <div style='display: flex; flex-direction: column; justify-content: center; align-items: center; width: 100%; height: 100%; text-align: center;'>
-                    <div style='color: {service_data['color']}; font-size: 2.5em; margin-bottom: 5px;'>
-                        {service_data['icon']}
+                <div style='height: 100%;'>
+                    <div class='kpi-container'>
+                        <div class='kpi-details'>
+                            <div class='kpi-metric-title'>{metric_label}</div>
+                            <div class='kpi-metric-number' style='color: {color};'>{metric}</div>
+                        </div>
+                        <div class='kpi-icon-area' style='background-color: {color};'>
+                            {icon}
+                        </div>
                     </div>
-                    <div style='font-weight: 700; font-size: 1.1em; color: {PRIMARY_TEXT_COLOR}; margin-bottom: 5px;'>
-                        {service_name.split(' ', 1)[1]} 
-                    </div>
-                    <div style='font-size: 0.8em; color: #555; height: 30px; overflow: hidden;'>
-                        {service_data['description']}
+                    <div class='kpi-footer'>
+                        <div class='kpi-trend' style='color: {trend_color};'>
+                            {trend_icon} {trend}
+                        </div>
+                        <div style='font-size: 0.7em; margin-left: 10px; white-space: nowrap;'>
+                            {description}
+                        </div>
                     </div>
                 </div>
                 """
                 
                 with cols[j]:
-                    # Use a standard button with unique key. Clicking it sets the new page state.
+                    # Use a standard button with unique key to house the HTML card. 
                     if st.button(
                         card_content_html,
-                        key=f"card_btn_{service_name.replace(' ', '_')}", # Unique key for stability
-                        help=service_data['description'],
+                        key=f"card_btn_{service_name.replace(' ', '_')}", 
                         unsafe_allow_html=True,
                         use_container_width=True
                     ):
