@@ -381,7 +381,7 @@ def dashboard_page():
         col = cols[i % 3]
         
         # HTML content for the button (Icon and Title)
-        # FIX APPLIED: Changed to a single-line f-string to resolve Streamlit internal parsing error
+        # FIX APPLIED in previous step: Single-line f-string
         button_content_html = f"<span class='card-icon' style='color: {details['color']};'>{details['icon']}</span><span class='card-title'>{name}</span>"
         
         # Use an internal key to style the button
@@ -389,12 +389,8 @@ def dashboard_page():
 
         with col:
             # Streamlit button styled as a card
-            # The label is the custom HTML content
-            if st.button(
-                button_content_html, 
-                key=button_key,
-                unsafe_allow_html=True
-            ):
+            # FIX APPLIED: Collapsing arguments onto a single line to fix SyntaxError
+            if st.button(button_content_html, key=button_key, unsafe_allow_html=True):
                 set_page(name)
                 st.rerun()
 
