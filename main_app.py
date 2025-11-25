@@ -1,4 +1,4 @@
-## main_app.py - FINAL VERSION WITH ADVANCED LISTING MAKER & NEW SKU LOGIC
+## main_app.py - FINAL VERSION WITH ADVANCED LISTING MAKER & USABILITY FIXES
 
 import streamlit as st
 from PIL import Image
@@ -180,62 +180,50 @@ def get_sample_csv():
 def generate_sku_listings(df):
     """
     Processes the DataFrame to explode sizes into individual SKUs,
-    creates unique SKU codes (SKU--COLOR--SIZE), and sorts by Group Name.
+    creates unique SKU codes, and sorts by Group Name.
     """
     
     size_col = 'Size(comma separated)*'
     sku_col = 'SKU Code*'
     group_col = 'Group Name*'
-    color_col = 'Product Color*'
-
+    
     # 1. Mandatory Column Check
     for col in MANDATORY_COLS:
         if col not in df.columns:
             st.error(f"Mandatory column missing: '{col}'. Please correct your CSV header.")
             return None
-    
+
     # 2. Split and Explode
+    # Ensure there are no NaNs in the size column before splitting
     df[size_col] = df[size_col].fillna('').astype(str).str.replace(' ', '').str.upper().str.split(',')
+    
+    # Handle rows where size column is empty after split (e.g., [''])
     df = df[df[size_col].apply(lambda x: len(x) > 0 and x != [''])]
+    
     df_expanded = df.explode(size_col, ignore_index=True)
+    
+    # Rename the size column
     df_expanded.rename(columns={size_col: 'Size'}, inplace=True)
     
-    # 3. Create a unique SKU for each variation (MODIFIED LOGIC)
-    
-    # Clean Color Column for SKU: UPPERCASE, remove spaces
-    cleaned_color = df_expanded[color_col].astype(str).str.replace(' ', '').str.upper()
-    
-    # New SKU format: SKU_CODE -- COLOR -- SIZE
-    df_expanded['New SKU'] = (
-        df_expanded[sku_col].astype(str) + 
-        '--' + 
-        cleaned_color + 
-        '--' + 
-        df_expanded['Size'].astype(str)
-    )
+    # 3. Create a unique SKU for each variation
+    df_expanded['New SKU'] = df_expanded[sku_col].astype(str) + '-' + df_expanded['Size'].astype(str)
     
     # Drop the old SKU Code* and use the new one
     df_expanded.drop(columns=[sku_col], inplace=True)
     df_expanded.rename(columns={'New SKU': sku_col}, inplace=True)
 
-    # 4. Sort and Reorder 
+    # 4. Sort by Group Name*
     df_sorted = df_expanded.sort_values(by=group_col, ascending=True)
     
+    # Reorder columns
     cols = list(df_sorted.columns)
-    
-    # Move SKU, Size, and Color to the front
-    if 'Size' in cols:
-        cols.insert(1, cols.pop(cols.index('Size')))
-    if color_col in cols:
-        cols.insert(2, cols.pop(cols.index(color_col))) # Place Color after Size
-    if sku_col in cols:
-        cols.insert(0, cols.pop(cols.index(sku_col))) # Place SKU at the very front
-
+    cols.insert(1, cols.pop(cols.index('Size')))
+    cols.insert(0, cols.pop(cols.index(sku_col)))
     df_sorted = df_sorted[cols]
     
     return df_sorted
 
-# --- 4. FEATURE IMPLEMENTATION (Listing Maker remains the same structure) ---
+# --- 4. FEATURE IMPLEMENTATION ---
 
 def image_uploader_tab():
     st.title("🖼️ Image Uploader")
@@ -267,7 +255,12 @@ def listing_maker_tab():
         'Nykaa', 'Mens XP', 'Tata Cliq', 'First Cry', 'Paytm Mall', 
         'Snapdeal', 'IndiaMart', 'Shopify'
     ]
+    quick_commerce_channels = [
+        'Blinkit', 'Zepto', 'Swiggy Instamart', 'Dunzo Daily', 'BigBasket', 
+        'Amazon Fresh', 'Flipkart Minutes', 'Myntra (M-Now)', 'FreshToHome'
+    ]
     
+    # --- Conditional Logic for Channel Category ---
     if channel_category == "Ecommerce":
         channels = ecommerce_channels
         
@@ -319,8 +312,6 @@ def listing_maker_tab():
                         if df_final is not None:
                             st.subheader("4. Generated Listings Preview")
                             st.write(f"Total SKU-level listings generated: **{df_final.shape[0]}**")
-                            # Display the new SKU format example
-                            st.caption(f"Example SKU Format: **{df_final['SKU Code*'].iloc[0]}**")
                             st.dataframe(df_final.head(10), use_container_width=True)
                             
                             # Prepare CSV for download
