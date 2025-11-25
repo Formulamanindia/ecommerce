@@ -25,8 +25,11 @@ if 'logged_in' not in st.session_state:
     st.session_state.logged_in = False
     st.session_state.username = None
     st.session_state.is_admin = False
-    # New state for social icon visibility
-    st.session_state.show_social_icons = True 
+    
+# FIX: Initialize the show_social_icons state outside the logged_in check
+# This ensures it exists before the configuration_tab tries to read it.
+if 'show_social_icons' not in st.session_state: 
+    st.session_state.show_social_icons = True
     
 # --- 2. CUSTOM CSS/INTERFACE ---
 
