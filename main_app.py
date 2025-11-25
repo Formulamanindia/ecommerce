@@ -1,4 +1,4 @@
-## main_app.py - FINAL VERSION WITH SIMPLE FOOTER LINKS
+## main_app.py - FINAL VERSION WITH SIMPLE, CLEAN FOOTER
 
 import streamlit as st
 from PIL import Image
@@ -137,8 +137,7 @@ def apply_custom_css():
         color: #1565C0; /* Darker Blue Text */
     }}
 
-    /* Footer Style */
-    /* Updated CSS for new footer layout */
+    /* Footer Style - Reverted to simple centered text */
     .footer {{
         position: fixed;
         bottom: 0;
@@ -149,11 +148,8 @@ def apply_custom_css():
         font-size: 0.8em;
         border-top: 1px solid #e0e0e0;
         z-index: 100;
-        /* Flexbox added to position content and links */
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 10px 20px; /* Added horizontal padding */
+        text-align: center; /* Center the text */
+        padding: 10px; 
     }}
     
     /* Ensure marketplace logos are square */
@@ -165,18 +161,11 @@ def apply_custom_css():
     st.markdown(custom_css, unsafe_allow_html=True)
 
 def display_footer():
-    """Displays the footer credit with LinkedIn and YouTube links beside it."""
+    """Displays the required footer credit only."""
     
-    FOOTER_ACCENT_COLOR = "#00C6FF"
-    
-    # HTML structure updated to include the links inside a flex container
     footer_html = f"""
     <div class="footer">
         <p style="margin: 0;">Made in Bharat | &copy; 2025 - Formula Man. All rights reserved.</p>
-        <div style="font-size: 1.0em;">
-            <a href="https://www.linkedin.com/in/formulaman/" target="_blank" style="margin-right: 15px; color: {FOOTER_ACCENT_COLOR}; text-decoration: none; font-weight: 500;">LinkedIn</a>
-            <a href="https://www.youtube.com/@formula_man" target="_blank" style="color: {FOOTER_ACCENT_COLOR}; text-decoration: none; font-weight: 500;">YouTube</a>
-        </div>
     </div>
     """
     st.markdown(footer_html, unsafe_allow_html=True)
@@ -806,7 +795,7 @@ def run_app():
         
         st.sidebar.markdown("---")
         
-        # --- REMOVED SOCIAL ICONS FROM SIDEBAR ---
+        # --- REMOVED SOCIAL LINKS BLOCK ---
 
         if st.sidebar.button("Logout"):
             st.session_state.logged_in = False
@@ -817,7 +806,7 @@ def run_app():
         # Execute the function corresponding to the selected option
         tabs_map[selected_option]()
 
-    # Display the required footer credit AND the new social links
+    # Display the required footer credit only
     display_footer()
 
 if __name__ == "__main__":
