@@ -1,4 +1,4 @@
-\## main_app.py - FINAL VERSION WITH MODERN DASHBOARD UI
+## main_app.py - FINAL VERSION WITH MODERN DASHBOARD UI
 
 import streamlit as st
 from PIL import Image
@@ -51,7 +51,7 @@ if 'show_social_icons' not in st.session_state:
 if 'marketplace_logos' not in st.session_state:
     st.session_state.marketplace_logos = DEFAULT_MARKETPLACES
 
-# --- 2. CUSTOM CSS/INTERFACE (MAJOR UPDATE HERE) ---
+# --- 2. CUSTOM CSS/INTERFACE ---
 
 def apply_custom_css():
     """Applies custom CSS for the modern dashboard look based on the reference link."""
@@ -191,7 +191,7 @@ def display_footer():
     """
     st.markdown(footer_html, unsafe_allow_html=True)
 
-# --- 3. CORE LOGIC FUNCTIONS (Unchanged) ---
+# --- 3. CORE LOGIC FUNCTIONS ---
 
 def get_sample_csv():
     """Generates the sample CSV data for download based on defined headers."""
@@ -321,7 +321,7 @@ def generate_sku_listings(df):
     
     return df_sorted
 
-# --- 4. FEATURE IMPLEMENTATION (Unchanged Logic, only minor text tweaks) ---
+# --- 4. FEATURE IMPLEMENTATION ---
 
 def pricing_tool_tab():
     st.title("💰 Pricing Tool")
@@ -417,7 +417,7 @@ def pricing_tool_tab():
                             df = pd.read_excel(uploaded_file, keep_default_na=False)
                         except Exception as e:
                             st.error(f"Error reading Excel file: {e}")
-                            st.error("Error reading Excel file: Missing optional dependency 'xlrd'. Use `pip install xlrd`.")
+                            st.error("Error: Missing optional dependency for .xls files. Please run `pip install xlrd` or convert the file to .xlsx or .csv.")
                             return
                     else:
                         st.error("Unsupported file format. Please upload a CSV or XLSX/XLS file.")
