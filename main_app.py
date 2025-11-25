@@ -1,11 +1,11 @@
-## main_app.py - FINAL VERSION WITH BANK SETTLEMENT ROUND DOWN
+## main_app.py - FINAL VERSION WITH BEAUTIFUL SOCIAL ICONS
 
 import streamlit as st
 from PIL import Image
 import io
 import pandas as pd
 import base64
-import numpy as np # <-- NumPy is required for floor operation
+import numpy as np
 
 # --- 1. CONFIGURATION AND INITIAL SETUP ---
 st.set_page_config(
@@ -297,7 +297,7 @@ def generate_sku_listings(df):
     if sku_col in cols:
         cols.insert(0, cols.pop(cols.index(sku_col)))
 
-    df_sorted = df_sorted[cols]
+    df_sorted = df_expanded[cols]
     
     return df_sorted
 
@@ -795,11 +795,44 @@ def run_app():
         
         st.sidebar.markdown("---")
         
-        # --- LOCATION FOR SOCIAL ICONS (ABOVE LOGOUT) ---
+        # --- UPDATED LOCATION FOR BEAUTIFUL SOCIAL ICONS (ABOVE LOGOUT) ---
         social_links_html = """
-        <div style="text-align: center; padding: 10px 0; border-top: 1px solid rgba(255, 255, 255, 0.1);">
-            <a href="https://www.linkedin.com/in/formulaman/" target="_blank" style="margin-right: 15px; font-size: 1.2em; color: #00C6FF; text-decoration: none;">🔗 LinkedIn</a>
-            <a href="https://www.youtube.com/@formula_man" target="_blank" style="font-size: 1.2em; color: #00C6FF; text-decoration: none;">▶️ YouTube</a>
+        <div style="
+            text-align: center; 
+            padding: 10px 0; 
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex; 
+            justify-content: space-around; 
+            align-items: center;
+            margin: 10px 0;
+        ">
+            <a href="https://www.linkedin.com/in/formulaman/" target="_blank" style="
+                color: #0A66C2; /* LinkedIn Blue */
+                background-color: #FFFFFF; /* White Circle */
+                border-radius: 50%; /* Circle shape */
+                width: 35px; 
+                height: 35px;
+                line-height: 35px; /* Center content vertically */
+                font-size: 1.2em; 
+                text-align: center;
+                text-decoration: none;
+                box-shadow: 0 0 5px rgba(0, 0, 0, 0.5); /* Subtle shadow */
+            ">
+                &#x1F517; </a>
+            
+            <a href="https://www.youtube.com/@formula_man" target="_blank" style="
+                color: #FF0000; /* YouTube Red */
+                background-color: #FFFFFF; /* White Circle */
+                border-radius: 50%;
+                width: 35px;
+                height: 35px;
+                line-height: 35px;
+                font-size: 1.2em;
+                text-align: center;
+                text-decoration: none;
+                box-shadow: 0 0 5px rgba(0, 0, 0, 0.5); 
+            ">
+                &#x25B6; </a>
         </div>
         """
         st.sidebar.markdown(social_links_html, unsafe_allow_html=True)
