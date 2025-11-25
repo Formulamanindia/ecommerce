@@ -76,6 +76,8 @@ def apply_custom_css():
     """
     st.markdown(custom_css, unsafe_allow_html=True)
 
+# main_app.py (Updated display_footer function)
+
 def display_footer():
     """Displays the required footer credit and social icons."""
     
@@ -91,10 +93,11 @@ def display_footer():
         </div>
         """
 
+    # FIX: Replaced HTML entity &copy; with the actual symbol ©
     footer_html = f"""
     <div class="footer">
         {social_icons_html}
-        Made in Bharat | &copy; 2025 - Formula Man. All rights reserved.
+        Made in Bharat | © 2025 - Formula Man. All rights reserved.
     </div>
     """
     st.markdown(footer_html, unsafe_allow_html=True)
