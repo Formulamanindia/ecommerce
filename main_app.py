@@ -57,9 +57,9 @@ if 'logged_in' not in st.session_state:
 if 'marketplace_logos' not in st.session_state:
     st.session_state.marketplace_logos = DEFAULT_MARKETPLACES
 
-# New state for page management
+# New state for page management. Default is "CardViewHome" after login.
 if 'current_page' not in st.session_state:
-    st.session_state.current_page = "Dashboard"
+    st.session_state.current_page = "CardViewHome"
 
 # --- 2. CUSTOM CSS/INTERFACE ---
 
@@ -72,7 +72,7 @@ SIDEBAR_TEXT_COLOR = "#FFFFFF"
 HOVER_COLOR = "#333d4f"       
 
 def apply_custom_css():
-    """Applies custom CSS for the modern dashboard look and service boxes."""
+    """Applies custom CSS for the modern dashboard look, service boxes, and the logout button."""
     
     custom_css = f"""
     <style>
@@ -119,6 +119,28 @@ def apply_custom_css():
     .stRadio > label:has(input:checked) > div:first-child {{
         color: {ACCENT_COLOR} !important; 
     }}
+
+    /* --- NEW: Logout Button Style (Targeting default buttons in the sidebar) --- */
+    /* Note: Since we removed type="primary" from the logout button, it is now a default button. */
+    .stApp .stSidebar .stButton button {{
+        background-color: transparent; 
+        color: #FF6B6B; /* Light Red for attention */
+        border: 1px solid #FF6B6B;
+        padding: 5px 15px;
+        font-size: 0.9em;
+        height: auto;
+        width: 100%;
+        margin-top: 15px;
+        transition: all 0.2s;
+        box-shadow: none;
+        transform: none;
+    }}
+    .stApp .stSidebar .stButton button:hover {{
+        background-color: #FF6B6B;
+        color: {SIDEBAR_BG_COLOR}; 
+        border: 1px solid #FF6B6B;
+    }}
+    /* -------------------------------------------------------------------------- */
 
 
     /* Headers/Titles in Main Content */
@@ -881,7 +903,8 @@ def run_app():
                     st.session_state.logged_in = True
                     st.session_state.username = username_input
                     st.session_state.is_admin = (username_input == ADMIN_USER)
-                    st.session_state.current_page = "Dashboard" # Redirect to the new dashboard
+                    # NEW: Default to Card View Home on login
+                    st.session_state.current_page = "CardViewHome" 
                     st.rerun() 
                 else:
                     st.error("Invalid User ID.")
@@ -894,25 +917,28 @@ def run_app():
         st.sidebar.markdown(f"**Role:** {USER_ACCESS.get(st.session_state.username, 'N/A')}")
         st.sidebar.markdown("---")
         
-        # --- Sidebar Navigation Logic (UPDATED TO SHOW ALL SERVICES) ---
+        # --- Sidebar Navigation Logic (UPDATED TO SHOW ONLY SERVICES + CONFIG) ---
         
-        # List of all available pages, including Dashboard and Config
-        main_nav_options = ["Dashboard"] + list(SERVICE_MAP.keys())
+        # List of all available pages, EXCLUDING 'Dashboard'
+        main_nav_options = list(SERVICE_MAP.keys()) 
         if st.session_state.is_admin:
              main_nav_options.append("🔧 Configuration (Admin)")
              
         # Determine the currently active page for the sidebar highlighting
-        current_index = 0
+        current_index = -1
         try:
             current_index = main_nav_options.index(st.session_state.current_page)
         except ValueError:
-            current_index = 0 # Default to Dashboard if page is unknown
+            # current_page is "CardViewHome" or an unknown page, so no item is highlighted.
+            current_index = 0 # If current_page is not found in options, set index to 0 to prevent Streamlit error
+        
+        # We only set the radio button's index if the current page is an item in the list
+        radio_index = current_index if st.session_state.current_page in main_nav_options else 0
 
-        # Use st.sidebar.radio with all pages for complete navigation
         selected_option = st.sidebar.radio(
             "Navigation", 
             main_nav_options,
-            index=current_index,
+            index=radio_index, 
             key="main_sidebar_nav"
         )
         
@@ -923,25 +949,28 @@ def run_app():
 
         st.sidebar.markdown("---")
 
-        if st.sidebar.button("Logout", type="primary"):
+        # --- Logout Button (Styled via CSS, no 'type="primary"' needed) ---
+        if st.sidebar.button("Logout", key="logout_btn"):
             st.session_state.logged_in = False
             st.session_state.username = None
             st.session_state.is_admin = False
-            st.session_state.current_page = "Dashboard" # Reset page
+            st.session_state.current_page = "CardViewHome" # Reset page
             st.rerun()
 
         # --- Main Content Execution ---
         current_page = st.session_state.current_page
         
-        if current_page == "Dashboard":
-            service_dashboard_tab()
+        if current_page == "CardViewHome": # This is the new default landing page/Home
+            service_dashboard_tab() # Renders the card view
         elif current_page == "🔧 Configuration (Admin)":
             configuration_tab()
         elif current_page in SERVICE_MAP:
-            # Execute the function for the selected service (navigated from radio button)
+            # Execute the function for the selected service
             SERVICE_MAP[current_page]["function"]()
         else:
-            st.title("Page Not Found")
+            # Fallback to home if page is invalid
+            st.session_state.current_page = "CardViewHome"
+            st.rerun()
 
 
     # Display the required footer credit only
