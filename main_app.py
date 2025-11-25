@@ -36,8 +36,8 @@ DEFAULT_MARKETPLACES = {
     "Meesho": "https://images.meesho.com/images/branding/meesho-horizontal-logo.svg"
 }
 
-# --- GLOBAL SERVICE MAP ---
-# Defined later to ensure function references work
+# Define the SERVICE_MAP here (or just before run_app)
+SERVICE_MAP = {} # Temporarily defined here, populated at the end
 
 # Initialize Session State
 if 'logged_in' not in st.session_state:
@@ -381,10 +381,8 @@ def dashboard_page():
         col = cols[i % 3]
         
         # HTML content for the button (Icon and Title)
-        button_content_html = f"""
-        <span class='card-icon' style='color: {details['color']};'>{details['icon']}</span>
-        <span class='card-title'>{name}</span>
-        """
+        # FIX APPLIED: Changed to a single-line f-string to resolve Streamlit internal parsing error
+        button_content_html = f"<span class='card-icon' style='color: {details['color']};'>{details['icon']}</span><span class='card-title'>{name}</span>"
         
         # Use an internal key to style the button
         button_key = f"dash_btn_{name.replace(' ', '-')}"
