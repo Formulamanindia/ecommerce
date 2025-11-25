@@ -1,4 +1,4 @@
-## main_app.py - PASSWORD REMOVED
+## main_app.py - TAB BASED INTERFACE & SOCIAL ICONS
 
 import streamlit as st
 from PIL import Image
@@ -7,14 +7,13 @@ import pandas as pd
 import base64
 
 # --- 1. CONFIGURATION AND INITIAL SETUP ---
-# Set the page configuration for a wider layout
 st.set_page_config(
     page_title="E-commerce Solution App",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# Admin and Sub User Credentials (Now only storing User IDs for access control)
+# Admin and Sub User Credentials (User ID Only Access)
 USER_ACCESS = {
     "Globalite": "Admin",  # Admin User
     "User": "Sub User"     # Sub User
@@ -26,11 +25,13 @@ if 'logged_in' not in st.session_state:
     st.session_state.logged_in = False
     st.session_state.username = None
     st.session_state.is_admin = False
+    # New state for social icon visibility
+    st.session_state.show_social_icons = True 
     
-# --- 2. CUSTOM CSS/INTERFACE (To mimic the design aesthetic) ---
+# --- 2. CUSTOM CSS/INTERFACE ---
 
 def apply_custom_css():
-    """Applies custom CSS for styling (trying to match the 'Bankco' theme look)"""
+    """Applies custom CSS for styling and social icon display."""
     
     PRIMARY_COLOR = "#007bff" 
     BACKGROUND_COLOR = "#ffffff"
@@ -39,38 +40,14 @@ def apply_custom_css():
 
     custom_css = f"""
     <style>
-    /* Global Background and Text */
-    .stApp {{
-        background-color: {BACKGROUND_COLOR};
-        color: {TEXT_COLOR};
-    }}
+    /* Global Styling */
+    .stApp {{ background-color: {BACKGROUND_COLOR}; color: {TEXT_COLOR}; }}
+    .css-1d391kg {{ background-color: {SECONDARY_BACKGROUND_COLOR}; }}
+    h1, h2, h3 {{ color: {PRIMARY_COLOR}; font-weight: 600; border-bottom: 2px solid {SECONDARY_BACKGROUND_COLOR}; padding-bottom: 5px; margin-top: 15px; }}
     
-    /* Sidebar styling */
-    .css-1d391kg {{ /* Selector for the main sidebar element */
-        background-color: {SECONDARY_BACKGROUND_COLOR};
-    }}
-    
-    /* Headers/Titles */
-    h1, h2, h3 {{
-        color: {PRIMARY_COLOR};
-        font-weight: 600;
-        border-bottom: 2px solid {SECONDARY_BACKGROUND_COLOR};
-        padding-bottom: 5px;
-        margin-top: 15px;
-    }}
-
     /* Primary Buttons */
-    .stButton>button {{
-        background-color: {PRIMARY_COLOR};
-        color: white;
-        border: none;
-        padding: 10px 20px;
-        border-radius: 5px;
-        transition: background-color 0.3s;
-    }}
-    .stButton>button:hover {{
-        background-color: #0056b3; 
-    }}
+    .stButton>button {{ background-color: {PRIMARY_COLOR}; color: white; border: none; padding: 10px 20px; border-radius: 5px; transition: background-color 0.3s; }}
+    .stButton>button:hover {{ background-color: #0056b3; }}
     
     /* Footer Style */
     .footer {{
@@ -86,20 +63,40 @@ def apply_custom_css():
         border-top: 1px solid #e0e0e0;
         z-index: 100;
     }}
+    .social-icons a {{
+        color: {PRIMARY_COLOR};
+        margin: 0 10px;
+        font-size: 1.2em;
+        text-decoration: none;
+    }}
     </style>
     """
     st.markdown(custom_css, unsafe_allow_html=True)
 
 def display_footer():
-    """Displays the required footer credit."""
-    footer_html = """
+    """Displays the required footer credit and social icons."""
+    
+    # Simple social icons using emojis and basic HTML structure
+    social_icons_html = ""
+    if st.session_state.show_social_icons:
+        social_icons_html = """
+        <div class="social-icons" style="margin-bottom: 5px;">
+            <a href="https://twitter.com/Streamlit" target="_blank">🐦 Twitter</a>
+            <a href="https://linkedin.com/" target="_blank">🔗 LinkedIn</a>
+            <a href="https://github.com/" target="_blank">🐈 GitHub</a>
+            <a href="https://www.youtube.com/" target="_blank">▶️ YouTube</a>
+        </div>
+        """
+
+    footer_html = f"""
     <div class="footer">
+        {social_icons_html}
         Made in Bharat | &copy; 2025 - Formula Man. All rights reserved.
     </div>
     """
     st.markdown(footer_html, unsafe_allow_html=True)
 
-# --- 3. FEATURE FUNCTIONS (PLACEHOLDERS) ---
+# --- 3. FEATURE FUNCTIONS (UNCHANGED FUNCTIONALITY) ---
 
 def image_uploader_tab():
     st.header("🖼️ Image Uploader")
@@ -149,12 +146,10 @@ def image_optimizer_tab():
                 st.image(image, use_column_width=True)
                 st.write(f"Size: {image.width}x{image.height}")
                 
-                # Optimization parameters
                 quality = st.slider("Compression Quality (0=Max, 100=Min)", 10, 95, 85)
                 max_width = st.number_input("Max Width (px)", value=1000, min_value=100)
                 
             if st.button("Optimize Image"):
-                # 1. Resize if needed
                 if image.width > max_width:
                     ratio = max_width / image.width
                     new_height = int(image.height * ratio)
@@ -162,7 +157,6 @@ def image_optimizer_tab():
                 else:
                     optimized_image = image
 
-                # 2. Compress (to a buffer)
                 buffer = io.BytesIO()
                 optimized_image.save(buffer, format="JPEG", quality=quality)
                 buffer.seek(0)
@@ -171,10 +165,8 @@ def image_optimizer_tab():
                     st.subheader("Optimized Image")
                     st.image(optimized_image, use_column_width=True)
                     st.success("Optimization Complete!")
-                    st.write(f"New Size: {optimized_image.width}x{optimized_image.height}")
                     st.write(f"File Size: {buffer.getbuffer().nbytes / (1024*1024):.2f} MB")
                     
-                    # Download button
                     st.download_button(
                         label="Download Optimized Image",
                         data=buffer,
@@ -194,9 +186,9 @@ def listing_optimizer_tab():
     if st.button("Analyze & Suggest Improvements"):
         if listing_text:
             st.subheader("Analysis Results (Placeholder)")
-            st.markdown("* **Keyword Density:** Low (Need more target keywords from Key Word Extractor)")
-            st.markdown("* **Readability:** Good (Flesch-Kincaid Grade Level: 8)")
-            st.markdown("* **Call-to-Action:** Missing (Suggest adding a strong CTA like 'Buy Now!')")
+            st.markdown("* **Keyword Density:** Low")
+            st.markdown("* **Readability:** Good")
+            st.markdown("* **Call-to-Action:** Missing")
             
             st.subheader("Optimized Suggestion (Simulated)")
             st.success(listing_text.replace("product", "high-quality product listing"))
@@ -228,16 +220,22 @@ def configuration_tab():
     st.header("🔧 Configuration (Admin Only)")
     if st.session_state.is_admin:
         st.success(f"Welcome Admin **{st.session_state.username}**. You have full access.")
-        st.subheader("API Key Management")
-        st.text_input("OpenAI/Image Optimization API Key", disabled=True, value="No password required for this app!")
         
+        st.subheader("Interface Controls")
+        
+        # Admin control to show/hide social icons
+        st.session_state.show_social_icons = st.toggle(
+            "Show Social Media Icons in Footer", 
+            value=st.session_state.show_social_icons, 
+            help="Toggle visibility of the Twitter, LinkedIn, and GitHub links in the app footer."
+        )
+
         st.subheader("User Management (Placeholder)")
         st.table(pd.DataFrame({
             "User ID": ["Globalite", "User"],
             "Role": ["Admin", "Sub User"],
             "Status": ["Active", "Active"]
         }))
-        st.text_area("System Logs", "2025-11-25: System started. User 'Globalite' logged in.", height=150)
     else:
         st.error("🛑 Access Denied. This section is for Admin access only.")
 
@@ -246,16 +244,15 @@ def configuration_tab():
 def run_app():
     """Manages login and main application flow."""
     
-    # Apply custom styling first
     apply_custom_css()
 
     # --- A. LOGIN INTERFACE (User ID Only) ---
     if not st.session_state.logged_in:
         st.title("🔐 E-commerce Solution Access")
-        st.info("Enter your User ID to gain access. (No password required)")
+        st.info("Enter your User ID to gain access. (User IDs: 'Globalite' or 'User')")
         
         with st.form("login_form"):
-            username_input = st.text_input("User ID", key="user_id_input").strip() # .strip() cleans whitespace
+            username_input = st.text_input("User ID", key="user_id_input").strip()
             submitted = st.form_submit_button("Access App")
             
             if submitted:
@@ -263,53 +260,55 @@ def run_app():
                     st.session_state.logged_in = True
                     st.session_state.username = username_input
                     st.session_state.is_admin = (username_input == ADMIN_USER)
-                    st.success(f"Access granted! Welcome, {st.session_state.username}")
-                    st.rerun() # Refresh app to show main interface
+                    # We use st.switch_page or st.rerun() here to transition to the main app view
+                    st.rerun() 
                 else:
-                    st.error("Invalid User ID. Please use 'Globalite' (Admin) or 'User' (Sub User).")
+                    st.error("Invalid User ID.")
         
     # --- B. MAIN APPLICATION INTERFACE (After Login) ---
     else:
-        # Define tabs based on access level
-        tabs = [
-            "🖼️ Image Uploader",
-            "📝 Listing Maker",
-            "✨ Image Optimizer",
-            "📈 Listing Optimizer",
-            "🔍 Key Word Extractor",
-        ]
-        
-        # Only show Configuration to Admin
-        if st.session_state.is_admin:
-            tabs.append("🔧 Configuration (Admin)")
-            
-        # Sidebar Navigation
         st.sidebar.header(f"👋 Welcome, {st.session_state.username}")
-        st.sidebar.markdown("---")
-        selected_tab = st.sidebar.radio("Navigation", tabs)
+        st.sidebar.markdown(f"**Access Level:** {USER_ACCESS.get(st.session_state.username, 'N/A')}")
         st.sidebar.markdown("---")
         
         if st.sidebar.button("Logout"):
             st.session_state.logged_in = False
             st.session_state.username = None
             st.session_state.is_admin = False
-            st.rerun() # Refresh to show login screen
+            st.rerun()
+
+        # Define tabs list dynamically, ensuring Admin tab is last
+        tabs_list = [
+            "Image Uploader",
+            "Listing Maker",
+            "Image Optimizer",
+            "Listing Optimizer",
+            "Key Word Extractor",
+        ]
+        if st.session_state.is_admin:
+            tabs_list.append("Configuration (Admin)")
+
+        # Create the tabs
+        tab_uploader, tab_listing_maker, tab_img_opt, tab_list_opt, tab_keywords, *optional_tab = st.tabs(tabs_list)
 
         # --- Tab Content Routing ---
-        if selected_tab == "🖼️ Image Uploader":
+        with tab_uploader:
             image_uploader_tab()
-        elif selected_tab == "📝 Listing Maker":
+        with tab_listing_maker:
             listing_maker_tab()
-        elif selected_tab == "✨ Image Optimizer":
+        with tab_img_opt:
             image_optimizer_tab()
-        elif selected_tab == "📈 Listing Optimizer":
+        with tab_list_opt:
             listing_optimizer_tab()
-        elif selected_tab == "🔍 Key Word Extractor":
+        with tab_keywords:
             keyword_extractor_tab()
-        elif selected_tab == "🔧 Configuration (Admin)":
-            configuration_tab()
+        
+        # Configuration tab is only visible and accessible if the user is Admin
+        if st.session_state.is_admin and optional_tab:
+            with optional_tab[0]:
+                configuration_tab()
 
-    # Display the required footer credit at the end
+    # Display the required footer credit and social icons
     display_footer()
 
 if __name__ == "__main__":
