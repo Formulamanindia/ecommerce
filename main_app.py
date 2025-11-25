@@ -36,8 +36,8 @@ DEFAULT_MARKETPLACES = {
     "Meesho": "https://images.meesho.com/images/branding/meesho-horizontal-logo.svg"
 }
 
-# Define the SERVICE_MAP here (or just before run_app)
-SERVICE_MAP = {} # Temporarily defined here, populated at the end
+# Define the SERVICE_MAP here (now only for logic, not dashboard buttons)
+SERVICE_MAP = {} 
 
 # Initialize Session State
 if 'logged_in' not in st.session_state:
@@ -344,75 +344,14 @@ def generate_sku_listings(df):
     if sku_col in cols:
         cols.insert(0, cols.pop(cols.index(sku_col)))
 
-    df_sorted = df_sorted[cols]
+    df_sorted = df_expanded[cols]
     
     return df_sorted
 
-# --- 4. DASHBOARD AND SERVICE PAGES ---
-
-def dashboard_page():
-    st.title("🚀 E-commerce Service Dashboard")
-    st.markdown("### Select a Service to Begin")
-    
-    # Use 3 columns for layout
-    cols = st.columns(3)
-    
-    # Custom CSS for inline styling of the buttons to look like cards
-    st.markdown("""
-    <style>
-    /* Injecting specific styles for the icon/title inside the dashboard buttons */
-    .stButton[data-testid*="stButton"] > button.dash-card > div {
-        flex-direction: column; 
-    }
-    .stButton[data-testid*="stButton"] > button.dash-card .card-icon {
-        font-size: 3rem;
-        margin-bottom: 5px;
-    }
-    .stButton[data-testid*="stButton"] > button.dash-card .card-title {
-        font-weight: 600;
-        font-size: 1.1em;
-        line-height: 1.2;
-    }
-    </style>
-    """, unsafe_allow_html=True)
-
-    
-    for i, (name, details) in enumerate(SERVICE_MAP.items()):
-        col = cols[i % 3]
-        
-        # HTML content for the button (Icon and Title)
-        button_content_html = f"<span class='card-icon' style='color: {details['color']};'>{details['icon']}</span><span class='card-title'>{name}</span>"
-        
-        # FIX APPLIED: Simplified key to index and used explicit keyword arguments
-        # This reduces complexity in Streamlit's internal parsing.
-        button_key = f"dash_btn_{i}" 
-
-        with col:
-            # Streamlit button styled as a card
-            if st.button(
-                label=button_content_html, 
-                key=button_key, 
-                unsafe_allow_html=True
-            ):
-                set_page(name)
-                st.rerun()
-
-            # The CSS class must be applied via markdown to the specific button container
-            # This is a hack to apply custom classes to Streamlit components
-            st.markdown(f"""
-            <script>
-                // Find the button element by its key (data-testid) and add the class
-                const button = document.querySelector('[data-testid*="{button_key}"] button');
-                if (button) {{
-                    button.classList.add('dash-card');
-                }}
-            </script>
-            """, unsafe_allow_html=True)
-            
-            # Add a small vertical space
-            st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
+# --- 4. DASHBOARD AND SERVICE PAGES (All Dashboard Content Removed) ---
 
 # --- Service Function Definitions ---
+# These functions are kept as they contain valuable logic, but are currently unreachable via navigation
 
 def listing_maker_tab():
     st.title("📝 Listing Maker")
@@ -861,6 +800,7 @@ def configuration_tab():
         st.error("🛑 Access Denied. This section is for Admin access only.")
 
 # --- Populate Service Map with functions after definition ---
+# SERVICE_MAP is kept only for historical context, not used for navigation
 SERVICE_MAP = {
     "📝 Listing Maker": {"icon": "📝", "function": listing_maker_tab, "color": "#00C6FF"},
     "💰 Pricing Tool": {"icon": "💰", "function": pricing_tool_tab, "color": "#18D5C1"},
@@ -875,7 +815,7 @@ SERVICE_MAP = {
 # --- 5. MAIN APP EXECUTION ---
 
 def run_app():
-    """Manages login and main application flow."""
+    """Manages login and main application flow, now displaying a simple welcome message upon login."""
     
     apply_custom_css()
 
@@ -893,6 +833,7 @@ def run_app():
                     st.session_state.logged_in = True
                     st.session_state.username = username_input
                     st.session_state.is_admin = (username_input == ADMIN_USER)
+                    st.session_state.current_page = "Welcome" # Set a default page
                     st.rerun() 
                 else:
                     st.error("Invalid User ID.")
@@ -900,24 +841,21 @@ def run_app():
     # --- B. MAIN APPLICATION INTERFACE (After Login) ---
     else:
         # Sidebar Header
-        st.sidebar.markdown(f"## **E-Commerce Dashboard**")
+        st.sidebar.markdown(f"## **E-Commerce Solution**")
         st.sidebar.markdown(f"**User:** {st.session_state.username}")
         st.sidebar.markdown(f"**Role:** {USER_ACCESS.get(st.session_state.username, 'N/A')}")
         st.sidebar.markdown("---")
         
-        # --- Sidebar Navigation Logic ---
-        # Sidebar always contains Dashboard link and Admin Config (if applicable)
-        
-        sidebar_options = ["Dashboard"] + list(SERVICE_MAP.keys())
+        # --- Sidebar Navigation Logic (Simplified) ---
+        sidebar_options = ["Welcome"]
         if st.session_state.is_admin:
             sidebar_options.append("🔧 Configuration (Admin)")
         
-        # Set the radio button index to the current page for visual fidelity
-        try:
-            default_index = sidebar_options.index(st.session_state.current_page)
-        except ValueError:
-            default_index = 0 # Default to Dashboard if current page is not found
-
+        # Use simple radio for navigation
+        default_index = 0
+        if st.session_state.current_page == "🔧 Configuration (Admin)" and st.session_state.is_admin:
+            default_index = 1
+        
         selected_option = st.sidebar.radio(
             "Navigation", 
             sidebar_options,
@@ -925,7 +863,6 @@ def run_app():
             key="main_sidebar_nav"
         )
         
-        # Update current_page based on sidebar selection
         st.session_state.current_page = selected_option
 
         st.sidebar.markdown("---")
@@ -940,15 +877,14 @@ def run_app():
         # --- Main Content Execution ---
         current_page = st.session_state.current_page
         
-        if current_page == "Dashboard":
-            dashboard_page()
+        if current_page == "Welcome":
+            st.title("👋 Welcome to Formula Man")
+            st.info("The dashboard has been temporarily disabled to resolve a recurring system error. Only the Configuration page is currently available for Admin users.")
         elif current_page == "🔧 Configuration (Admin)":
             configuration_tab()
-        elif current_page in SERVICE_MAP:
-            # Execute the function for the selected service
-            SERVICE_MAP[current_page]["function"]()
         else:
-            dashboard_page() # Fallback
+            st.title("Page Not Found")
+
 
     # Display the required footer credit only
     display_footer()
