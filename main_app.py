@@ -169,13 +169,15 @@ def apply_custom_css():
     """
     st.markdown(custom_css, unsafe_allow_html=True)
 
+# ----------------- FIX FOR SOCIAL ICON RENDERING STARTS HERE -----------------
 def display_footer():
     """Displays the required footer credit and social icons."""
     
     social_icons_html = ""
     if st.session_state.show_social_icons:
+        # Simplified HTML structure for icons and credit line to ensure correct rendering
         social_icons_html = """
-        <div class="social-icons" style="margin-bottom: 5px;">
+        <div class="social-icons" style="margin-bottom: 5px; text-align: center;">
             <a href="https://twitter.com/Streamlit" target="_blank">🐦 Twitter</a>
             <a href="https://linkedin.com/" target="_blank">🔗 LinkedIn</a>
             <a href="https://github.com/" target="_blank">🐈 GitHub</a>
@@ -186,10 +188,11 @@ def display_footer():
     footer_html = f"""
     <div class="footer">
         {social_icons_html}
-        Made in Bharat | © 2025 - Formula Man. All rights reserved.
+        <p style="margin: 0;">Made in Bharat | © 2025 - Formula Man. All rights reserved.</p>
     </div>
     """
     st.markdown(footer_html, unsafe_allow_html=True)
+# ----------------- FIX FOR SOCIAL ICON RENDERING ENDS HERE -----------------
 
 # --- 3. CORE LOGIC FUNCTIONS ---
 
@@ -578,7 +581,7 @@ def listing_maker_tab():
                                 st.warning("No listings were generated. Check if the 'Variations (comma separated)*' column is correctly filled.")
                                 return
                                 
-                            # --- START: New Image Display Logic ---
+                            # --- START: Image Display Logic (Requested Feature) ---
                             column_configuration = {
                                 "Main Image*": st.column_config.ImageColumn(
                                     "Product Image", # Title for the image column
@@ -598,7 +601,7 @@ def listing_maker_tab():
                                 column_config=column_configuration,
                                 hide_index=True 
                             )
-                            # --- END: New Image Display Logic ---
+                            # --- END: Image Display Logic ---
                             
                             csv_buffer = io.StringIO()
                             df_final.to_csv(csv_buffer, index=False)
