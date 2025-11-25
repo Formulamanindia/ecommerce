@@ -212,7 +212,8 @@ def get_sample_csv():
         'Country Of Origin*': ["India"],
         'Pack of*': [1],
         'Product Category*': ["T-Shirt"],
-        'Main Image*': ["https://sample.com/image.jpg"],
+        # NOTE: This link is used as an example for the image preview feature
+        'Main Image*': ["https://i.imgur.com/8Q9j0rX.png"],
         '1 st Image': ["(Optional)"],
         '2nd Image': ["(Optional)"],
         '3rd Image': ["(Optional)"],
@@ -804,4 +805,36 @@ def run_app():
             "📝 Listing Maker": listing_maker_tab,
             "💰 Pricing Tool": pricing_tool_tab,
             "🖼️ Image Uploader": image_uploader_tab,
-            "✨ Image Optimizer":
+            "✨ Image Optimizer": image_optimizer_tab,
+            "📈 Listing Optimizer": listing_optimizer_tab,
+            "🔍 Key Word Extractor": keyword_extractor_tab,
+        }
+        
+        if st.session_state.is_admin:
+            tabs_map["🔧 Configuration (Admin)"] = configuration_tab
+
+        # Sidebar Header - Added a placeholder logo area
+        st.sidebar.markdown(f"## **E-Commerce Dashboard**")
+        st.sidebar.markdown(f"**User:** {st.session_state.username}")
+        st.sidebar.markdown(f"**Role:** {USER_ACCESS.get(st.session_state.username, 'N/A')}")
+        st.sidebar.markdown("---")
+        
+        # Sidebar Navigation
+        selected_option = st.sidebar.radio("Navigation", list(tabs_map.keys()))
+        
+        st.sidebar.markdown("---")
+        
+        if st.sidebar.button("Logout"):
+            st.session_state.logged_in = False
+            st.session_state.username = None
+            st.session_state.is_admin = False
+            st.rerun()
+
+        # Execute the function corresponding to the selected option
+        tabs_map[selected_option]()
+
+    # Display the required footer credit and social icons
+    display_footer()
+
+if __name__ == "__main__":
+    run_app()
