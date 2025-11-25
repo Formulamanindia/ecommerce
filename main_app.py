@@ -168,7 +168,7 @@ def display_footer():
 # --- 3. CORE LOGIC FUNCTIONS ---
 
 def get_sample_csv():
-    # ... (omitted for brevity, remains unchanged)
+    """Generates the sample CSV data for download based on defined headers."""
     data = {
         'Product Name*': ["Premium Cotton Tee"],
         'Variations (comma separated)*': ["S,M,L"],
@@ -203,6 +203,7 @@ def generate_description_mock(row):
     MOCK FUNCTION: Generates a conversion-focused product description (under 1400 characters) 
     if the existing description field is empty, with no markdown bolding.
     """
+    # Extract data with safe defaults
     title = row.get('Product Name*')
     category = row.get('Product Category*')
     color = row.get('Product Color*')
@@ -210,9 +211,11 @@ def generate_description_mock(row):
     brand = row.get('Brand*', 'a trusted source')
     sizes = row.get('Variations (comma separated)*', 'various sizes').replace(',', ', ')
     
+    # Check for mandatory input for description
     if pd.isna(title) or pd.isna(category):
         return "No comprehensive description generated due to missing product name or category."
         
+    # Generate engaging description based on user logic:
     description = (
         f"Elevate your wardrobe with this exquisite {category} from {brand}. "
         f"Crafted from ultra-soft {fabric}, this piece guarantees all-day COMFORT and a premium feel. "
@@ -224,6 +227,7 @@ def generate_description_mock(row):
         f"(Keywords: {title.replace(' ', ', ').replace('-', ',')}, {category}, {fabric}, {color})"
     )
     
+    # Enforce character limit
     MAX_CHARS = 1400
     if len(description) > MAX_CHARS:
         description = description[:MAX_CHARS - 3] + '...'
@@ -232,18 +236,24 @@ def generate_description_mock(row):
 
 
 def generate_sku_listings(df):
-    # ... (omitted for brevity, remains unchanged except for the description generation)
+    """
+    Processes the DataFrame to explode variations into individual SKUs,
+    creates unique SKU codes (SKU--COLOR--SIZE), and sorts by Group Name.
+    """
+    
     size_col = 'Variations (comma separated)*'
     sku_col = 'SKU Code*'
     group_col = 'Group Name*'
     color_col = 'Product Color*'
     desc_col = 'Product Description*'
 
+    # 1. Mandatory Column Check
     for col in MANDATORY_COLS:
         if col not in df.columns:
             st.error(f"Mandatory column missing: '{col}'. Please correct your CSV header.")
             return None
             
+    # --- FEATURE: Generate/Update Product Description ---
     # Apply the generation ONLY if the description field is empty/missing 
     df[desc_col] = df.apply(
         lambda row: generate_description_mock(row) 
@@ -251,12 +261,15 @@ def generate_sku_listings(df):
         else row[desc_col], 
         axis=1
     )
+    # -----------------------------------------------------
     
+    # 2. Split and Explode
     df[size_col] = df[size_col].fillna('').astype(str).str.replace(' ', '').str.upper().str.split(',')
     df = df[df[size_col].apply(lambda x: len(x) > 0 and x != [''])]
     df_expanded = df.explode(size_col, ignore_index=True)
     df_expanded.rename(columns={size_col: 'Size'}, inplace=True)
     
+    # 3. Create a unique SKU for each variation (SKU--COLOR--SIZE)
     cleaned_color = df_expanded[color_col].astype(str).str.replace(' ', '').str.upper()
     
     df_expanded['New SKU'] = (
@@ -270,6 +283,7 @@ def generate_sku_listings(df):
     df_expanded.drop(columns=[sku_col], inplace=True)
     df_expanded.rename(columns={'New SKU': sku_col}, inplace=True)
 
+    # 4. Sort and Reorder 
     df_sorted = df_expanded.sort_values(by=group_col, ascending=True)
     
     cols = list(df_sorted.columns)
@@ -302,16 +316,20 @@ def pricing_tool_tab():
 
     for i, name in enumerate(marketplace_names):
         with tabs[i]:
-            # Logo Display: 50x50 pixels enforcement
+            # Logo Display: 50x50 pixels enforcement and error handling
             logo_url = st.session_state.marketplace_logos.get(name, "")
             
             col1, col2 = st.columns([1, 6])
             with col1:
-                 # Enforce 50x50 size for the logo
                  if logo_url:
-                     st.image(logo_url, width=50, height=50) 
+                     try:
+                         # Enforce 50x50 size for the logo
+                         st.image(logo_url, width=50, height=50) 
+                     except Exception:
+                         # Fallback if st.image fails to load the URL (Fixes the error)
+                         st.error(f"Logo failed to load for {name}")
                  else:
-                     st.markdown("Logo Missing")
+                     st.markdown("No Logo Set")
             with col2:
                  st.markdown(f"### {name} Channel Details")
 
@@ -338,8 +356,9 @@ def pricing_tool_tab():
                 channel_details = "Custom Marketplace"
             
             # Simple inverse calculation for selling price based on margin and mock fees
-            if 1 - (target_margin/100) - commission_rate > 0:
-                recommended_selling_price = (cost_of_product + shipping_fee) / (1 - (target_margin/100) - commission_rate)
+            denominator = 1 - (target_margin/100) - commission_rate
+            if denominator > 0:
+                recommended_selling_price = (cost_of_product + shipping_fee) / denominator
             else:
                 recommended_selling_price = (cost_of_product + shipping_fee) * 2 # Fallback
                 
@@ -354,7 +373,6 @@ def pricing_tool_tab():
 def image_uploader_tab():
     st.title("🖼️ Image Uploader")
     st.info("Upload and review your product images before processing.")
-    # ... (omitted for brevity, remains unchanged)
     uploaded_file = st.file_uploader("Choose an image...", type=["jpg", "jpeg", "png"])
     if uploaded_file is not None:
         try:
@@ -366,7 +384,9 @@ def image_uploader_tab():
 
 def listing_maker_tab():
     st.title("📝 Listing Maker")
-    # ... (omitted for brevity, remains unchanged)
+    
+    # --- Channel Category Selector ---
+    st.subheader("1. Select Channel Type and Destination")
     channel_category = st.radio(
         "Channel Category", 
         ("Ecommerce", "Quick Commerce"),
@@ -456,7 +476,6 @@ def listing_maker_tab():
 def image_optimizer_tab():
     st.title("🖼️ Image Optimizer")
     st.info("Compress and resize images to improve page load times.")
-    # ... (omitted for brevity, remains unchanged)
     uploaded_file = st.file_uploader("Upload Image to Optimize", type=["jpg", "jpeg", "png"], key="optimizer_uploader")
     if uploaded_file is not None:
         try:
@@ -493,7 +512,6 @@ def image_optimizer_tab():
 def listing_optimizer_tab():
     st.title("📈 Listing Optimizer")
     st.info("Analyze and improve your current product listing text for better conversion and SEO.")
-    # ... (omitted for brevity, remains unchanged)
     listing_text = st.text_area("Paste your current product listing description here:", height=300)
     if st.button("Analyze & Suggest Improvements"):
         if listing_text:
@@ -509,7 +527,6 @@ def listing_optimizer_tab():
 def keyword_extractor_tab():
     st.title("🔍 Key Word Extractor")
     st.info("Extract relevant, high-ranking keywords from competitors or product ideas.")
-    # ... (omitted for brevity, remains unchanged)
     seed_phrase = st.text_input("Enter a seed phrase or competitor's product name:")
     if st.button("Extract Keywords"):
         if seed_phrase:
@@ -560,6 +577,7 @@ def configuration_tab():
                     if new_name not in st.session_state.marketplace_logos:
                         st.session_state.marketplace_logos[new_name] = new_logo_url
                         st.success(f"Marketplace '{new_name}' added successfully! Please refresh the Pricing Tool tab.")
+                        st.rerun() # Rerun to update the Pricing Tool tabs immediately
                     else:
                         st.warning(f"Marketplace '{new_name}' already exists.")
                 else:
