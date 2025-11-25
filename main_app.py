@@ -1,4 +1,4 @@
-## main_app.py - FINAL VERSION WITH ROBUST FLIPKART FILE UPLOADER
+\## main_app.py - FINAL VERSION WITH MODERN DASHBOARD UI
 
 import streamlit as st
 from PIL import Image
@@ -51,77 +51,103 @@ if 'show_social_icons' not in st.session_state:
 if 'marketplace_logos' not in st.session_state:
     st.session_state.marketplace_logos = DEFAULT_MARKETPLACES
 
-# --- 2. CUSTOM CSS/INTERFACE ---
+# --- 2. CUSTOM CSS/INTERFACE (MAJOR UPDATE HERE) ---
 
 def apply_custom_css():
-    """Applies custom CSS for the Admin Panel look, referencing bankco's style."""
+    """Applies custom CSS for the modern dashboard look based on the reference link."""
     
-    PRIMARY_COLOR = "#0A2463"         
-    BACKGROUND_COLOR = "#ffffff"     
-    SIDEBAR_BG_COLOR = "#f0f0f0"     
-    ACCENT_BLUE = "#007bff"          
+    # NEW COLOR SCHEME based on https://matdash-angular-rtl.netlify.app/dashboards/dashboard1
+    SIDEBAR_BG_COLOR = "#212838"  # Deep Indigo/Dark Slate for sidebar
+    BACKGROUND_COLOR = "#F8F9FA"  # Very Light Gray for main content
+    ACCENT_COLOR = "#00C6FF"      # Vibrant Cyan for active link/highlight
+    PRIMARY_TEXT_COLOR = "#212838" # Dark text for main content
+    SIDEBAR_TEXT_COLOR = "#FFFFFF" # White text for sidebar
+    HOVER_COLOR = "#333d4f"       # Slightly lighter shade for sidebar hover
 
     custom_css = f"""
     <style>
     /* Global Styling */
     .stApp {{
         background-color: {BACKGROUND_COLOR};
-        color: {PRIMARY_COLOR};
-        font-family: Arial, sans-serif;
+        color: {PRIMARY_TEXT_COLOR};
+        font-family: 'Roboto', sans-serif; /* Using a clean, common font */
     }}
     
-    /* Sidebar Styling */
+    /* Sidebar Styling - Targeted class for the Streamlit sidebar */
     .css-1d391kg {{ 
         background-color: {SIDEBAR_BG_COLOR};
-        color: {PRIMARY_COLOR};
+        color: {SIDEBAR_TEXT_COLOR};
     }}
-    
+    /* Sidebar Text/Headers */
+    .css-1d391kg h1, .css-1d391kg h2, .css-1d391kg h3, .css-1d391kg .stMarkdown, 
+    .css-1d391kg .stSelectbox label, .css-1d391kg .stRadio label {{
+        color: {SIDEBAR_TEXT_COLOR} !important;
+    }}
+
     /* Sidebar Radio Button Styling (Navigation Links) */
     .stRadio > label {{
-        padding: 8px 15px;
+        padding: 10px 15px;
         margin: 5px 0;
         border-radius: 5px;
-        color: {PRIMARY_COLOR};
-        font-size: 1.1em;
-        font-weight: 500;
-        transition: background-color 0.2s, color 0.2s;
+        color: {SIDEBAR_TEXT_COLOR};
+        font-size: 1.0em;
+        font-weight: 400;
+        transition: background-color 0.2s, color 0.2s, border-left 0.2s;
+        border-left: 3px solid transparent; 
+    }}
+    .stRadio > label:hover {{
+        background-color: {HOVER_COLOR};
+        color: {ACCENT_COLOR}; 
     }}
     .stRadio > label:has(input:checked) {{
-        background-color: {ACCENT_BLUE} !important;
-        color: white !important;
-        font-weight: bold;
+        background-color: {HOVER_COLOR} !important; 
+        color: {ACCENT_COLOR} !important; 
+        font-weight: 600;
+        border-left: 3px solid {ACCENT_COLOR} !important; 
     }}
-    
-    /* Headers/Titles */
+    .stRadio > label:has(input:checked) > div:first-child {{
+        color: {ACCENT_COLOR} !important; 
+    }}
+
+
+    /* Headers/Titles in Main Content */
     h1, h2, h3 {{ 
-        color: {PRIMARY_COLOR}; 
+        color: {PRIMARY_TEXT_COLOR}; 
         font-weight: 700; 
-        border-bottom: 2px solid {ACCENT_BLUE}; 
-        padding-bottom: 5px; 
-        margin-top: 15px; 
+        border-bottom: none; 
+        padding-bottom: 0; 
+        margin-top: 20px; 
     }}
 
     /* Primary Buttons */
     .stButton>button {{ 
-        background-color: {ACCENT_BLUE}; 
-        color: white; 
+        background-color: {ACCENT_COLOR}; 
+        color: {SIDEBAR_BG_COLOR}; /* Dark text on light accent button */
         border: none; 
         padding: 10px 20px; 
-        border-radius: 3px; 
-        transition: background-color 0.3s; 
+        border-radius: 5px; 
+        font-weight: 600;
+        transition: background-color 0.3s, color 0.3s; 
     }}
     .stButton>button:hover {{ 
-        background-color: #0056b3; 
+        background-color: #00B1E6; /* Slightly darker cyan on hover */
     }}
     
+    /* Info Box / Alert for cleaner look */
+    .stAlert.info, .stInfo {{
+        background-color: #E3F2FD; /* Light Blue BG */
+        border-left: 5px solid {ACCENT_COLOR}; /* Accent Cyan Border */
+        color: #1565C0; /* Darker Blue Text */
+    }}
+
     /* Footer Style */
     .footer {{
         position: fixed;
         bottom: 0;
         left: 0;
         width: 100%;
-        background-color: {SIDEBAR_BG_COLOR};
-        color: {PRIMARY_COLOR};
+        background-color: {BACKGROUND_COLOR}; 
+        color: {PRIMARY_TEXT_COLOR};
         text-align: center;
         padding: 10px;
         font-size: 0.8em;
@@ -129,7 +155,7 @@ def apply_custom_css():
         z-index: 100;
     }}
     .social-icons a {{
-        color: {ACCENT_BLUE};
+        color: {ACCENT_COLOR};
         margin: 0 10px;
         font-size: 1.2em;
         text-decoration: none;
@@ -165,7 +191,7 @@ def display_footer():
     """
     st.markdown(footer_html, unsafe_allow_html=True)
 
-# --- 3. CORE LOGIC FUNCTIONS ---
+# --- 3. CORE LOGIC FUNCTIONS (Unchanged) ---
 
 def get_sample_csv():
     """Generates the sample CSV data for download based on defined headers."""
@@ -295,7 +321,7 @@ def generate_sku_listings(df):
     
     return df_sorted
 
-# --- 4. FEATURE IMPLEMENTATION ---
+# --- 4. FEATURE IMPLEMENTATION (Unchanged Logic, only minor text tweaks) ---
 
 def pricing_tool_tab():
     st.title("💰 Pricing Tool")
@@ -391,6 +417,7 @@ def pricing_tool_tab():
                             df = pd.read_excel(uploaded_file, keep_default_na=False)
                         except Exception as e:
                             st.error(f"Error reading Excel file: {e}")
+                            st.error("Error reading Excel file: Missing optional dependency 'xlrd'. Use `pip install xlrd`.")
                             return
                     else:
                         st.error("Unsupported file format. Please upload a CSV or XLSX/XLS file.")
@@ -453,10 +480,34 @@ def image_uploader_tab():
     if uploaded_file is not None:
         try:
             image = Image.open(uploaded_file)
-            st.image(image, caption='Uploaded Image', use_column_width=True)
-            st.success(f"Image uploaded successfully! Original size: {uploaded_file.size / (1024*1024):.2f} MB")
+            col1, col2 = st.columns(2)
+            with col1:
+                st.subheader("Original Image")
+                st.image(image, use_column_width=True)
+                quality = st.slider("Compression Quality (0=Max, 100=Min)", 10, 95, 85)
+                max_width = st.number_input("Max Width (px)", value=1000, min_value=100)
+            if st.button("Optimize Image"):
+                if image.width > max_width:
+                    ratio = max_width / image.width
+                    new_height = int(image.height * ratio)
+                    optimized_image = image.resize((max_width, new_height))
+                else:
+                    optimized_image = image
+                buffer = io.BytesIO()
+                optimized_image.save(buffer, format="JPEG", quality=quality)
+                buffer.seek(0)
+                with col2:
+                    st.subheader("Optimized Image")
+                    st.image(optimized_image, use_column_width=True)
+                    st.success("Optimization Complete!")
+                    st.download_button(
+                        label="Download Optimized Image",
+                        data=buffer,
+                        file_name=f"optimized_{uploaded_file.name}",
+                        mime="image/jpeg"
+                    )
         except Exception as e:
-            st.error(f"Error loading image: {e}")
+            st.error(f"An error occurred during optimization: {e}")
 
 def listing_maker_tab():
     st.title("📝 Listing Maker")
@@ -741,8 +792,9 @@ def run_app():
         if st.session_state.is_admin:
             tabs_map["🔧 Configuration (Admin)"] = configuration_tab
 
-        # Sidebar Header
-        st.sidebar.markdown(f"# **{st.session_state.username}'s Dashboard**")
+        # Sidebar Header - Added a placeholder logo area
+        st.sidebar.markdown(f"## **E-Commerce Dashboard**")
+        st.sidebar.markdown(f"**User:** {st.session_state.username}")
         st.sidebar.markdown(f"**Role:** {USER_ACCESS.get(st.session_state.username, 'N/A')}")
         st.sidebar.markdown("---")
         
