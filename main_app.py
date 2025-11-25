@@ -1,4 +1,4 @@
-## main_app.py - FINAL VERSION WITH MODERN DASHBOARD UI
+## main_app.py - FINAL VERSION WITH SOCIAL ICONS IN SIDEBAR
 
 import streamlit as st
 from PIL import Image
@@ -45,8 +45,7 @@ if 'logged_in' not in st.session_state:
     st.session_state.username = None
     st.session_state.is_admin = False
     
-if 'show_social_icons' not in st.session_state: 
-    st.session_state.show_social_icons = True 
+# Removed: 'show_social_icons' is no longer needed in session state
     
 if 'marketplace_logos' not in st.session_state:
     st.session_state.marketplace_logos = DEFAULT_MARKETPLACES
@@ -154,12 +153,7 @@ def apply_custom_css():
         border-top: 1px solid #e0e0e0;
         z-index: 100;
     }}
-    .social-icons a {{
-        color: {ACCENT_COLOR};
-        margin: 0 10px;
-        font-size: 1.2em;
-        text-decoration: none;
-    }}
+    /* Removed social-icons CSS since they are no longer in the footer */
     
     /* Ensure marketplace logos are square */
     .stImage > img {{
@@ -169,30 +163,15 @@ def apply_custom_css():
     """
     st.markdown(custom_css, unsafe_allow_html=True)
 
-# ----------------- FIX FOR SOCIAL ICON RENDERING STARTS HERE -----------------
 def display_footer():
-    """Displays the required footer credit and social icons."""
+    """Displays the required footer credit only (social icons removed from footer)."""
     
-    social_icons_html = ""
-    if st.session_state.show_social_icons:
-        # Simplified HTML structure for icons and credit line to ensure correct rendering
-        social_icons_html = """
-        <div class="social-icons" style="margin-bottom: 5px; text-align: center;">
-            <a href="https://twitter.com/Streamlit" target="_blank">🐦 Twitter</a>
-            <a href="https://linkedin.com/" target="_blank">🔗 LinkedIn</a>
-            <a href="https://github.com/" target="_blank">🐈 GitHub</a>
-            <a href="https://www.youtube.com/" target="_blank">▶️ YouTube</a>
-        </div>
-        """
-
     footer_html = f"""
     <div class="footer">
-        {social_icons_html}
         <p style="margin: 0;">Made in Bharat | © 2025 - Formula Man. All rights reserved.</p>
     </div>
     """
     st.markdown(footer_html, unsafe_allow_html=True)
-# ----------------- FIX FOR SOCIAL ICON RENDERING ENDS HERE -----------------
 
 # --- 3. CORE LOGIC FUNCTIONS ---
 
@@ -581,7 +560,7 @@ def listing_maker_tab():
                                 st.warning("No listings were generated. Check if the 'Variations (comma separated)*' column is correctly filled.")
                                 return
                                 
-                            # --- START: Image Display Logic (Requested Feature) ---
+                            # --- START: Image Display Logic ---
                             column_configuration = {
                                 "Main Image*": st.column_config.ImageColumn(
                                     "Product Image", # Title for the image column
@@ -625,8 +604,8 @@ def listing_maker_tab():
 
 
 def image_optimizer_tab():
-    st.title("🖼️ Image Optimizer")
-    st.info("Compress and resize images to improve page load times.")
+    st.title("🖼️ Image Uploader")
+    st.info("Upload and review your product images before processing.")
     uploaded_file = st.file_uploader("Upload Image to Optimize", type=["jpg", "jpeg", "png"], key="optimizer_uploader")
     if uploaded_file is not None:
         try:
@@ -699,14 +678,8 @@ def configuration_tab():
     if st.session_state.is_admin:
         st.success(f"Welcome Admin **{st.session_state.username}**. You have full access.")
         
-        st.subheader("Interface Controls")
+        # Removed "Interface Controls" section as show_social_icons is no longer used
         
-        st.session_state.show_social_icons = st.toggle(
-            "Show Social Media Icons in Footer", 
-            value=st.session_state.show_social_icons, 
-            help="Toggle visibility of the social links in the app footer."
-        )
-
         st.subheader("User Management (Placeholder)")
         st.table(pd.DataFrame({
             "User ID": ["Globalite", "User"],
@@ -827,6 +800,16 @@ def run_app():
         
         st.sidebar.markdown("---")
         
+        # --- NEW LOCATION FOR SOCIAL ICONS (ABOVE LOGOUT) ---
+        social_links_html = """
+        <div style="text-align: center; padding: 10px 0; border-top: 1px solid rgba(255, 255, 255, 0.1);">
+            <a href="https://www.linkedin.com/in/formulaman/" target="_blank" style="margin-right: 15px; font-size: 1.2em; color: #00C6FF; text-decoration: none;">🔗 LinkedIn</a>
+            <a href="https://www.youtube.com/@formula_man" target="_blank" style="font-size: 1.2em; color: #00C6FF; text-decoration: none;">▶️ YouTube</a>
+        </div>
+        """
+        st.sidebar.markdown(social_links_html, unsafe_allow_html=True)
+        # --- END SOCIAL ICONS ---
+
         if st.sidebar.button("Logout"):
             st.session_state.logged_in = False
             st.session_state.username = None
@@ -836,7 +819,7 @@ def run_app():
         # Execute the function corresponding to the selected option
         tabs_map[selected_option]()
 
-    # Display the required footer credit and social icons
+    # Display the required footer credit
     display_footer()
 
 if __name__ == "__main__":
