@@ -317,7 +317,6 @@ def generate_sku_listings(df):
     df_sorted = df_expanded[cols]
     return df_sorted
 
-# The following service functions bodies remain the same but are mapped below.
 def listing_maker_tab():
     # ... (function body for Listing Maker)
     st.title("📝 Listing Maker")
@@ -375,7 +374,9 @@ def pricing_tool_tab():
     with st.container():
         st.info("Calculate competitive selling prices and net profit across different marketplaces.")
         marketplace_names = list(st.session_state.marketplace_logos.keys())
-        if not marketplace_names: st.warning("No marketplaces configured. Please ask an Admin to add marketplaces in the Configuration tab."); return
+        if not marketplace_names: 
+            st.warning("No marketplaces configured. Please ask an Admin to add marketplaces in the Configuration tab.")
+            return
         tabs = st.tabs(marketplace_names)
         for i, name in enumerate(marketplace_names):
             with tabs[i]:
@@ -383,144 +384,240 @@ def pricing_tool_tab():
                 with col1:
                     logo_url = st.session_state.marketplace_logos.get(name, "")
                     if logo_url:
-                        try: st.image(logo_url, width=50, output_format="PNG")
-                        except Exception: st.markdown("No Logo Set")
-                    else: st.markdown("No Logo Set")
-                with col2: st.markdown(f"### {name} Channel Details")
+                        try: 
+                            st.image(logo_url, width=50, output_format="PNG")
+                        except Exception: 
+                            st.markdown("No Logo Set")
+                    else: 
+                        st.markdown("No Logo Set")
+                with col2: 
+                    st.markdown(f"### {name} Channel Details")
                 if name == "Flipkart":
-                    st.subheader("Flipkart Price Increase Tool"); st.info("Upload your Flipkart file and increase **'Bank Settlement'** prices within a specified range.")
+                    st.subheader("Flipkart Price Increase Tool")
+                    st.info("Upload your Flipkart file and increase **'Bank Settlement'** prices within a specified range.")
                     col_calc_1, col_calc_2, col_calc_3 = st.columns(3)
-                    with col_calc_1: min_bs = st.number_input("Min Bank Settlement (₹)", value=100.0, min_value=0.0, key=f'{name}_min_bs')
-                    with col_calc_2: max_bs = st.number_input("Max Bank Settlement (₹)", value=500.0, min_value=min_bs, key=f'{name}_max_bs')
+                    with col_calc_1: 
+                        min_bs = st.number_input("Min Bank Settlement (₹)", value=100.0, min_value=0.0, key=f'{name}_min_bs')
+                    with col_calc_2: 
+                        max_bs = st.number_input("Max Bank Settlement (₹)", value=500.0, min_value=min_bs, key=f'{name}_max_bs')
                     with col_calc_3:
-                        increase_percent_options = [f"{p}%" for p in range(1, 11)]; increase_percent_str = st.selectbox("Price Increase Limit", options=increase_percent_options, index=0, key=f'{name}_increase_percent')
+                        increase_percent_options = [f"{p}%" for p in range(1, 11)]
+                        increase_percent_str = st.selectbox("Price Increase Limit", options=increase_percent_options, index=0, key=f'{name}_increase_percent')
                         increase_percent = int(increase_percent_str.replace('%', ''))
-                    st.markdown("---"); uploaded_file = st.file_uploader("Upload Flipkart Listing File (CSV/Excel compatible)", type=["csv", "xlsx", "xls"], key=f'{name}_uploader')
+                    st.markdown("---")
+                    uploaded_file = st.file_uploader("Upload Flipkart Listing File (CSV/Excel compatible)", type=["csv", "xlsx", "xls"], key=f'{name}_uploader')
                     if uploaded_file is not None and st.button("Calculate & Prepare Download", key=f'{name}_calculate_btn', type="primary"):
-                        df = None; file_extension = uploaded_file.name.split('.')[-1].lower()
+                        df = None
+                        file_extension = uploaded_file.name.split('.')[-1].lower()
                         if file_extension == 'csv':
-                            try: df = pd.read_csv(uploaded_file, keep_default_na=False)
+                            try: 
+                                df = pd.read_csv(uploaded_file, keep_default_na=False)
                             except UnicodeDecodeError:
                                 st.warning("UTF-8 decoding failed. Trying alternative encodings (cp1252/latin-1)...")
-                                try: uploaded_file.seek(0); df = pd.read_csv(uploaded_file, keep_default_na=False, encoding='cp1252')
-                                except: uploaded_file.seek(0); df = pd.read_csv(uploaded_file, keep_default_na=False, encoding='latin-1')
-                            except Exception as e: st.error(f"Error reading CSV file: {e}"); return
+                                try: 
+                                    uploaded_file.seek(0)
+                                    df = pd.read_csv(uploaded_file, keep_default_na=False, encoding='cp1252')
+                                except: 
+                                    uploaded_file.seek(0)
+                                    df = pd.read_csv(uploaded_file, keep_default_na=False, encoding='latin-1')
+                            except Exception as e: 
+                                st.error(f"Error reading CSV file: {e}")
+                                return
                         elif file_extension in ['xlsx', 'xls']:
-                            try: df = pd.read_excel(uploaded_file, keep_default_na=False)
-                            except Exception as e: st.error(f"Error reading Excel file: {e}"); st.error("Error: Missing optional dependency for .xls files. Please run `pip install xlrd` or convert the file to .xlsx or .csv."); return
-                        else: st.error("Unsupported file format. Please upload a CSV or XLSX/XLS file."); return
-                        if df is None or 'Bank Settlement' not in df.columns: st.error("Error: The uploaded file must contain a column named 'Bank Settlement' and be a readable format."); return
+                            try: 
+                                df = pd.read_excel(uploaded_file, keep_default_na=False)
+                            except Exception as e: 
+                                st.error(f"Error reading Excel file: {e}")
+                                st.error("Error: Missing optional dependency for .xls files. Please run `pip install xlrd` or convert the file to .xlsx or .csv.")
+                                return
+                        else: 
+                            st.error("Unsupported file format. Please upload a CSV or XLSX/XLS file.")
+                            return
+                        if df is None or 'Bank Settlement' not in df.columns: 
+                            st.error("Error: The uploaded file must contain a column named 'Bank Settlement' and be a readable format.")
+                            return
                         st.success(f"File loaded successfully. Processing {df.shape[0]} rows...")
                         multiplier = 1 + (increase_percent / 100)
                         df['BS_Num'] = pd.to_numeric(df['Bank Settlement'], errors='coerce')
                         condition = ((df['BS_Num'] >= min_bs) & (df['BS_Num'] <= max_bs) & (~df['BS_Num'].isna()))
                         df.loc[condition, 'Bank Settlement'] = (np.floor(df.loc[condition, 'BS_Num'] * multiplier)).astype(int)
                         df.drop(columns=['BS_Num'], inplace=True)
-                        st.subheader("✅ Calculation Complete"); st.write(f"Updated **{condition.sum()}** rows out of {df.shape[0]}.")
-                        csv_buffer = io.StringIO(); df.to_csv(csv_buffer, index=False); csv_data = csv_buffer.getvalue().encode('utf-8')
+                        st.subheader("✅ Calculation Complete")
+                        st.write(f"Updated **{condition.sum()}** rows out of {df.shape[0]}.")
+                        csv_buffer = io.StringIO()
+                        df.to_csv(csv_buffer, index=False)
+                        csv_data = csv_buffer.getvalue().encode('utf-8')
                         st.download_button(label="Download Updated Flipkart File (CSV)", data=csv_data, file_name=f"Flipkart_Price_Updated_{min_bs}_{max_bs}_plus{increase_percent}%.csv", mime="text/csv", type="primary")
                         st.dataframe(df.head(5))
-                else: st.subheader(f"Pricing Calculator for {name}"); st.info("🚧 **Work in Progress:** Advanced pricing tools and channel integration for this marketplace are currently under development. Please check back later.")
+                else: 
+                    st.subheader(f"Pricing Calculator for {name}")
+                    st.info("🚧 **Work in Progress:** Advanced pricing tools and channel integration for this marketplace are currently under development. Please check back later.")
                 
 def image_uploader_tab():
-    # ... (function body for Image Uploader)
-    st.title("🖼️ Image Uploader"); with st.container():
-        st.info("Upload and review your product images before processing."); uploaded_file = st.file_uploader("Choose an image...", type=["jpg", "jpeg", "png"])
+    # Fix 1: Separate st.title and with st.container()
+    st.title("🖼️ Image Uploader")
+    with st.container():
+        st.info("Upload and review your product images before processing.")
+        uploaded_file = st.file_uploader("Choose an image...", type=["jpg", "jpeg", "png"])
         if uploaded_file is not None:
             try:
-                image = Image.open(uploaded_file); col1, col2 = st.columns(2)
-                with col1: st.subheader("Original Image"); st.image(image, use_column_width=True); quality = st.slider("Compression Quality (0=Max, 100=Min)", 10, 95, 85); max_width = st.number_input("Max Width (px)", value=1000, min_value=100)
+                image = Image.open(uploaded_file)
+                col1, col2 = st.columns(2)
+                with col1: 
+                    st.subheader("Original Image")
+                    st.image(image, use_column_width=True)
+                    quality = st.slider("Compression Quality (0=Max, 100=Min)", 10, 95, 85)
+                    max_width = st.number_input("Max Width (px)", value=1000, min_value=100)
                 if st.button("Optimize Image", key="optimize_image_btn", type="primary"):
-                    if image.width > max_width: ratio = max_width / image.width; new_height = int(image.height * ratio); optimized_image = image.resize((max_width, new_height))
-                    else: optimized_image = image
-                    buffer = io.BytesIO(); optimized_image.save(buffer, format="JPEG", quality=quality); buffer.seek(0)
-                    with col2: st.subheader("Optimized Image"); st.image(optimized_image, use_column_width=True); st.success("Optimization Complete!")
+                    if image.width > max_width: 
+                        ratio = max_width / image.width
+                        new_height = int(image.height * ratio)
+                        optimized_image = image.resize((max_width, new_height))
+                    else: 
+                        optimized_image = image
+                    buffer = io.BytesIO()
+                    optimized_image.save(buffer, format="JPEG", quality=quality)
+                    buffer.seek(0)
+                    with col2: 
+                        st.subheader("Optimized Image")
+                        st.image(optimized_image, use_column_width=True)
+                        st.success("Optimization Complete!")
                     st.download_button(label="Download Optimized Image", data=buffer, file_name=f"optimized_{uploaded_file.name}", mime="image/jpeg", type="primary")
-            except Exception as e: st.error(f"An error occurred during optimization: {e}")
+            except Exception as e: 
+                st.error(f"An error occurred during optimization: {e}")
 
 def image_optimizer_tab():
-    # ... (function body for Image Optimizer)
-    st.title("✨ Image Optimizer"); with st.container():
-        st.info("Bulk optimize images by resizing and compressing them for faster loading on marketplaces."); st.warning("This is a simplified mock-up of a bulk optimization feature.")
+    # Fix 2: Separate st.title and with st.container()
+    st.title("✨ Image Optimizer")
+    with st.container():
+        st.info("Bulk optimize images by resizing and compressing them for faster loading on marketplaces.")
+        st.warning("This is a simplified mock-up of a bulk optimization feature.")
         uploaded_files = st.file_uploader("Upload multiple images to optimize", type=["jpg", "jpeg", "png"], accept_multiple_files=True)
         if uploaded_files:
-            st.subheader(f"Files Uploaded: {len(uploaded_files)}"); st.number_input("Target Max Width (px)", value=800, min_value=100, key="opt_width"); st.slider("Target JPEG Quality", 70, 95, 80, key="opt_quality")
+            st.subheader(f"Files Uploaded: {len(uploaded_files)}")
+            st.number_input("Target Max Width (px)", value=800, min_value=100, key="opt_width")
+            st.slider("Target JPEG Quality", 70, 95, 80, key="opt_quality")
             if st.button("Run Bulk Optimization", key="run_bulk_opt_btn", type="primary"):
-                with st.spinner("Optimizing images..."): import time; time.sleep(2)
-                st.success(f"Successfully optimized {len(uploaded_files)} images (simulated)."); st.info("A ZIP file containing all optimized images would typically be generated for download here.")
+                with st.spinner("Optimizing images..."): 
+                    import time
+                    time.sleep(2)
+                st.success(f"Successfully optimized {len(uploaded_files)} images (simulated).")
+                st.info("A ZIP file containing all optimized images would typically be generated for download here.")
             
 def listing_optimizer_tab():
-    # ... (function body for Listing Optimizer)
-    st.title("📈 Listing Optimizer"); with st.container():
-        st.info("Analyze and improve your current product listing text for better conversion and SEO."); listing_text = st.text_area("Paste your current product listing description here:", height=300)
+    # Fix 3: Separate st.title and with st.container()
+    st.title("📈 Listing Optimizer")
+    with st.container():
+        st.info("Analyze and improve your current product listing text for better conversion and SEO.")
+        listing_text = st.text_area("Paste your current product listing description here:", height=300)
         if st.button("Analyze & Suggest Improvements", key="analyze_listing_btn", type="primary"):
             if listing_text:
-                st.subheader("Analysis Results (Placeholder)"); st.markdown("* **Keyword Density:** Low - Focus on 'Cotton T-Shirt'"); st.markdown("* **Readability:** Good"); st.markdown("* **Call-to-Action:** Missing - Suggest adding phrases like 'Buy Now' or 'Add to Cart'")
-                st.subheader("Optimized Suggestion (Simulated)"); st.success(listing_text.replace("product", "high-quality product listing"))
-            else: st.warning("Please paste some listing text to analyze.")
+                st.subheader("Analysis Results (Placeholder)")
+                st.markdown("* **Keyword Density:** Low - Focus on 'Cotton T-Shirt'")
+                st.markdown("* **Readability:** Good")
+                st.markdown("* **Call-to-Action:** Missing - Suggest adding phrases like 'Buy Now' or 'Add to Cart'")
+                st.subheader("Optimized Suggestion (Simulated)")
+                st.success(listing_text.replace("product", "high-quality product listing"))
+            else: 
+                st.warning("Please paste some listing text to analyze.")
             
 def keyword_extractor_tab():
-    # ... (function body for Keyword Extractor)
-    st.title("🔍 Key Word Extractor"); with st.container():
-        st.info("Extract relevant, high-ranking keywords from competitors or product ideas."); seed_phrase = st.text_input("Enter a seed phrase or competitor's product name:")
+    # Fix 4: Separate st.title and with st.container()
+    st.title("🔍 Key Word Extractor")
+    with st.container():
+        st.info("Extract relevant, high-ranking keywords from competitors or product ideas.")
+        seed_phrase = st.text_input("Enter a seed phrase or competitor's product name:")
         if st.button("Extract Keywords", key="extract_keywords_btn", type="primary"):
             if seed_phrase:
-                st.subheader(f"Keywords for: **{seed_phrase}** (Simulated)"); keywords = [f"{seed_phrase} best price", f"{seed_phrase} for sale", "e-commerce product keyword", "top trending listing keyword", "formula man's suggestion"]
+                st.subheader(f"Keywords for: **{seed_phrase}** (Simulated)")
+                keywords = [f"{seed_phrase} best price", f"{seed_phrase} for sale", "e-commerce product keyword", "top trending listing keyword", "formula man's suggestion"]
                 df = pd.DataFrame({"Keyword": keywords, "Search Volume (Sim)": [8500, 3200, 5000, 1500, 900]})
                 st.dataframe(df, use_container_width=True)
-            else: st.warning("Please enter a seed phrase.")
+            else: 
+                st.warning("Please enter a seed phrase.")
 
 def gst_filing_tab():
-    # ... (function body for GST Filing)
-    st.title("🧾 GST Filing"); with st.container():
-        st.info("Simplify your monthly and quarterly GST compliance, reconciliation, and filing process."); st.subheader("GST Filing Status")
-        with st.container(): col1, col2, col3 = st.columns(3); with col1: st.metric("Pending Returns", "GSTR-1 (Oct)", "1 month due")
-        with col2: st.metric("Last Filed Date", "2025-10-20", "GSTR-3B")
-        with col3: st.metric("Input Tax Credit (ITC)", "₹1,25,000", "Simulated"); st.markdown("---"); st.subheader("Upload Data for Reconciliation")
-        st.file_uploader("Upload Sales Data (GSTR-1, GSTR-3B)", type=["csv", "xlsx"]); st.file_uploader("Upload Purchase Data (GSTR-2A/2B)", type=["csv", "xlsx"])
-        if st.button("Generate Reconciliation Report", key="generate_report_btn", type="primary"): st.success("Reconciliation report generated successfully (simulated). Discrepancies: 5.")
+    # Fix 5: Separate st.title and with st.container()
+    st.title("🧾 GST Filing")
+    with st.container():
+        st.info("Simplify your monthly and quarterly GST compliance, reconciliation, and filing process.")
+        st.subheader("GST Filing Status")
+        with st.container(): 
+            col1, col2, col3 = st.columns(3)
+            with col1: 
+                st.metric("Pending Returns", "GSTR-1 (Oct)", "1 month due")
+            with col2: 
+                st.metric("Last Filed Date", "2025-10-20", "GSTR-3B")
+            with col3: 
+                st.metric("Input Tax Credit (ITC)", "₹1,25,000", "Simulated")
+            st.markdown("---")
+            st.subheader("Upload Data for Reconciliation")
+        st.file_uploader("Upload Sales Data (GSTR-1, GSTR-3B)", type=["csv", "xlsx"])
+        st.file_uploader("Upload Purchase Data (GSTR-2A/2B)", type=["csv", "xlsx"])
+        if st.button("Generate Reconciliation Report", key="generate_report_btn", type="primary"): 
+            st.success("Reconciliation report generated successfully (simulated). Discrepancies: 5.")
 
 def report_maker_tab():
-    # ... (function body for Report Maker)
-    st.title("📊 Report Maker"); with st.container():
-        st.info("Generate custom reports, analytics, and business intelligence dashboards."); st.subheader("Report Type Selection")
+    # Fix 6: Separate st.title and with st.container()
+    st.title("📊 Report Maker")
+    with st.container():
+        st.info("Generate custom reports, analytics, and business intelligence dashboards.")
+        st.subheader("Report Type Selection")
         report_type = st.selectbox("Choose a Report Template", ["Sales Performance by Channel", "Inventory Health Report", "Profit & Loss Statement (Simplified)"])
-        col1, col2 = st.columns(2); with col1: start_date = st.date_input("Start Date")
-        with col2: end_date = st.date_input("End Date")
+        col1, col2 = st.columns(2)
+        with col1: 
+            start_date = st.date_input("Start Date")
+        with col2: 
+            end_date = st.date_input("End Date")
         if st.button("Generate Report", key="report_gen_btn", type="primary"):
             st.success(f"Generating **{report_type}** from {start_date} to {end_date} (simulated).")
             st.dataframe(pd.DataFrame({'Metric': ['Revenue', 'Expenses', 'Profit'], 'Value': ['₹1,50,000', '₹80,000', '₹70,000']}))
 
 def configuration_tab():
-    # ... (function body for Configuration)
-    st.title("🔧 Configuration (Admin Only)"); with st.container():
+    # Fix 7: Separate st.title and with st.container()
+    st.title("🔧 Configuration (Admin Only)")
+    with st.container():
         if st.session_state.is_admin:
-            st.success(f"Welcome Admin **{st.session_state.username}**. You have full access."); st.subheader("User Management (Placeholder)")
-            st.table(pd.DataFrame({"User ID": ["Globalite", "User"], "Role": ["Admin", "Sub User"], "Status": ["Active", "Active"]})); st.subheader("Marketplace and Logo Management")
+            st.success(f"Welcome Admin **{st.session_state.username}**. You have full access.")
+            st.subheader("User Management (Placeholder)")
+            st.table(pd.DataFrame({"User ID": ["Globalite", "User"], "Role": ["Admin", "Sub User"], "Status": ["Active", "Active"]}))
+            st.subheader("Marketplace and Logo Management")
             st.info("Use this tool to add new marketplaces or edit existing logos.")
             with st.expander("➕ Add New Marketplace", expanded=False):
                 with st.form("marketplace_adder", clear_on_submit=True):
-                    new_name = st.text_input("Marketplace Name (e.g., Nykaa)", key="new_mp_name").strip(); new_logo_url = st.text_input("Logo Link/URL (e.g., https://logo.com/nykaa.png)", key="new_mp_logo").strip()
+                    new_name = st.text_input("Marketplace Name (e.g., Nykaa)", key="new_mp_name").strip()
+                    new_logo_url = st.text_input("Logo Link/URL (e.g., https://logo.com/nykaa.png)", key="new_mp_logo").strip()
                     submitted = st.form_submit_button("Add Marketplace", type="primary")
                     if submitted:
                         if new_name and new_logo_url:
                             if new_name not in st.session_state.marketplace_logos:
-                                st.session_state.marketplace_logos[new_name] = new_logo_url; st.success(f"Marketplace '{new_name}' added successfully!"); st.rerun()
-                            else: st.warning(f"Marketplace '{new_name}' already exists.")
-                        else: st.error("Please enter both a name and a logo link.")
+                                st.session_state.marketplace_logos[new_name] = new_logo_url
+                                st.success(f"Marketplace '{new_name}' added successfully!")
+                                st.rerun()
+                            else: 
+                                st.warning(f"Marketplace '{new_name}' already exists.")
+                        else: 
+                            st.error("Please enter both a name and a logo link.")
             if st.session_state.marketplace_logos:
-                st.subheader("Marketplace Logo Editor"); marketplace_to_edit = st.selectbox("Select Marketplace to Edit Logo", options=list(st.session_state.marketplace_logos.keys()), key="mp_edit_selector")
+                st.subheader("Marketplace Logo Editor")
+                marketplace_to_edit = st.selectbox("Select Marketplace to Edit Logo", options=list(st.session_state.marketplace_logos.keys()), key="mp_edit_selector")
                 current_logo_url = st.session_state.marketplace_logos.get(marketplace_to_edit, "")
                 with st.form("marketplace_editor", clear_on_submit=False):
                     new_logo_url_edit = st.text_input(f"New Logo Link/URL for **{marketplace_to_edit}**", value=current_logo_url, key="new_mp_logo_edit").strip()
                     submitted_edit = st.form_submit_button("Update Logo", type="primary")
                     if submitted_edit:
                         if new_logo_url_edit:
-                            st.session_state.marketplace_logos[marketplace_to_edit] = new_logo_url_edit; st.success(f"Logo for '{marketplace_to_edit}' updated successfully! The app will refresh now."); st.rerun()
-                        else: st.error("Logo link cannot be empty.")
-            st.markdown("---"); st.markdown("#### Current Marketplaces:"); current_mps = pd.DataFrame(st.session_state.marketplace_logos.items(), columns=['Marketplace', 'Logo URL'])
+                            st.session_state.marketplace_logos[marketplace_to_edit] = new_logo_url_edit
+                            st.success(f"Logo for '{marketplace_to_edit}' updated successfully! The app will refresh now.")
+                            st.rerun()
+                        else: 
+                            st.error("Logo link cannot be empty.")
+            st.markdown("---")
+            st.markdown("#### Current Marketplaces:")
+            current_mps = pd.DataFrame(st.session_state.marketplace_logos.items(), columns=['Marketplace', 'Logo URL'])
             st.dataframe(current_mps, use_container_width=True)
-        else: st.error("🛑 Access Denied. This section is for Admin access only.")
+        else: 
+            st.error("🛑 Access Denied. This section is for Admin access only.")
 
 # Map the service names to their actual functions
 SERVICE_MAP["📝 Listing Maker"]["function"] = listing_maker_tab
