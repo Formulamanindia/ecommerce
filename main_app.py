@@ -381,16 +381,19 @@ def dashboard_page():
         col = cols[i % 3]
         
         # HTML content for the button (Icon and Title)
-        # FIX APPLIED in previous step: Single-line f-string
         button_content_html = f"<span class='card-icon' style='color: {details['color']};'>{details['icon']}</span><span class='card-title'>{name}</span>"
         
-        # Use an internal key to style the button
-        button_key = f"dash_btn_{name.replace(' ', '-')}"
+        # FIX APPLIED: Simplified key to index and used explicit keyword arguments
+        # This reduces complexity in Streamlit's internal parsing.
+        button_key = f"dash_btn_{i}" 
 
         with col:
             # Streamlit button styled as a card
-            # FIX APPLIED: Collapsing arguments onto a single line to fix SyntaxError
-            if st.button(button_content_html, key=button_key, unsafe_allow_html=True):
+            if st.button(
+                label=button_content_html, 
+                key=button_key, 
+                unsafe_allow_html=True
+            ):
                 set_page(name)
                 st.rerun()
 
