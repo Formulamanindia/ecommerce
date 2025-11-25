@@ -1,11 +1,11 @@
-## main_app.py - FINAL VERSION WITH BEAUTIFUL SOCIAL ICONS
+## main_app.py - FINAL VERSION WITH BANK SETTLEMENT ROUND DOWN AND BEAUTIFUL ICONS
 
 import streamlit as st
 from PIL import Image
 import io
 import pandas as pd
 import base64
-import numpy as np
+import numpy as np # <-- NumPy is required for floor operation
 
 # --- 1. CONFIGURATION AND INITIAL SETUP ---
 st.set_page_config(
@@ -297,7 +297,7 @@ def generate_sku_listings(df):
     if sku_col in cols:
         cols.insert(0, cols.pop(cols.index(sku_col)))
 
-    df_sorted = df_expanded[cols]
+    df_sorted = df_sorted[cols]
     
     return df_sorted
 
@@ -423,7 +423,7 @@ def pricing_tool_tab():
                         (~df['BS_Num'].isna()) # Ensure it was successfully converted to a number
                     )
 
-                    # --- UPDATED: Apply increase, round down, and cast to integer (no decimals) ---
+                    # --- CRITICAL CHANGE: Apply increase, round down, and cast to integer (no decimals) ---
                     df.loc[condition, 'Bank Settlement'] = (
                         np.floor(df.loc[condition, 'BS_Num'] * multiplier)
                     ).astype(int)
@@ -835,7 +835,8 @@ def run_app():
                 &#x25B6; </a>
         </div>
         """
-        st.sidebar.markdown(social_links_html, unsafe_allow_html=True)
+        # CRITICAL: This line allows the HTML to render as code
+        st.sidebar.markdown(social_links_html, unsafe_allow_html=True) 
         # --- END SOCIAL ICONS ---
 
         if st.sidebar.button("Logout"):
