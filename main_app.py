@@ -1,10 +1,11 @@
-## main_app.py - SIDEBAR NAVIGATION & ADMIN PANEL LOOK
+## main_app.py - FINAL VERSION WITH ADVANCED LISTING MAKER
 
 import streamlit as st
 from PIL import Image
 import io
 import pandas as pd
 import base64
+import numpy as np
 
 # --- 1. CONFIGURATION AND INITIAL SETUP ---
 st.set_page_config(
@@ -26,7 +27,6 @@ if 'logged_in' not in st.session_state:
     st.session_state.username = None
     st.session_state.is_admin = False
     
-# FIX: Initialize the show_social_icons state outside the logged_in check
 if 'show_social_icons' not in st.session_state: 
     st.session_state.show_social_icons = True 
 
@@ -35,11 +35,10 @@ if 'show_social_icons' not in st.session_state:
 def apply_custom_css():
     """Applies custom CSS for the Admin Panel look, referencing bankco's style."""
     
-    # Colors inspired by the reference site (White BG, Blue/Navy Accents)
-    PRIMARY_COLOR = "#0A2463"         # Dark Navy Blue for accents/text
-    BACKGROUND_COLOR = "#ffffff"     # White Main Background
-    SIDEBAR_BG_COLOR = "#f0f0f0"     # Light Gray for Sidebar Background
-    ACCENT_BLUE = "#007bff"          # Lighter Blue for buttons/highlights
+    PRIMARY_COLOR = "#0A2463"         
+    BACKGROUND_COLOR = "#ffffff"     
+    SIDEBAR_BG_COLOR = "#f0f0f0"     
+    ACCENT_BLUE = "#007bff"          
 
     custom_css = f"""
     <style>
@@ -87,7 +86,7 @@ def apply_custom_css():
         color: white; 
         border: none; 
         padding: 10px 20px; 
-        border-radius: 3px; /* Sharper corners */
+        border-radius: 3px; 
         transition: background-color 0.3s; 
     }}
     .stButton>button:hover {{ 
@@ -140,13 +139,57 @@ def display_footer():
     """
     st.markdown(footer_html, unsafe_allow_html=True)
 
-# --- 3. FEATURE FUNCTIONS (UNCHANGED FUNCTIONALITY) ---
+# --- 3. FEATURE FUNCTIONS ---
+
+# Function to process the listing CSV file
+def generate_sku_listings(df):
+    """
+    Processes the DataFrame to explode sizes into individual SKUs,
+    creates unique SKU codes, and sorts by Group Name.
+    """
+    
+    # 1. Clean and split the size column
+    size_col = 'Size(comma separated)*'
+    sku_col = 'SKU Code*'
+    group_col = 'Group Name*'
+    
+    # Check if essential columns exist
+    if size_col not in df.columns or sku_col not in df.columns or group_col not in df.columns:
+        st.error(f"Required columns missing. Please ensure the CSV contains: '{size_col}', '{sku_col}', and '{group_col}'.")
+        return None
+
+    df[size_col] = df[size_col].astype(str).str.replace(' ', '').str.upper().str.split(',')
+    
+    # 2. Explode the DataFrame based on the size column
+    df_expanded = df.explode(size_col, ignore_index=True)
+    
+    # Rename the size column to something more standard (e.g., 'Size')
+    df_expanded.rename(columns={size_col: 'Size'}, inplace=True)
+    
+    # 3. Create a unique SKU for each variation
+    # Example: WINGS-S, WINGS-M, etc.
+    df_expanded['New SKU'] = df_expanded[sku_col].astype(str) + '-' + df_expanded['Size'].astype(str)
+    
+    # Drop the old SKU Code* and use the new one, and drop the old size column placeholder
+    df_expanded.drop(columns=[sku_col], inplace=True)
+    df_expanded.rename(columns={'New SKU': sku_col}, inplace=True)
+
+    # 4. Sort by Group Name*
+    df_sorted = df_expanded.sort_values(by=group_col, ascending=True)
+    
+    # Reorder columns to put SKU and Size near the beginning for clarity
+    cols = list(df_sorted.columns)
+    cols.insert(1, cols.pop(cols.index('Size'))) # Move Size to second position
+    cols.insert(0, cols.pop(cols.index(sku_col))) # Move SKU to first position
+    df_sorted = df_sorted[cols]
+    
+    return df_sorted
 
 def image_uploader_tab():
     st.title("🖼️ Image Uploader")
     st.info("Upload and review your product images before processing.")
     uploaded_file = st.file_uploader("Choose an image...", type=["jpg", "jpeg", "png"])
-    # ... rest of the image_uploader_tab logic ...
+    
     if uploaded_file is not None:
         try:
             image = Image.open(uploaded_file)
@@ -157,27 +200,97 @@ def image_uploader_tab():
 
 def listing_maker_tab():
     st.title("📝 Listing Maker")
-    st.info("Generate or manually input product details for your e-commerce platform.")
-    # ... rest of the listing_maker_tab logic ...
-    product_title = st.text_input("Product Title (Required)")
-    description = st.text_area("Product Description")
-    category = st.selectbox("Category", ["Electronics", "Clothing", "Home Goods", "Other"])
-    price = st.number_input("Price (in currency)", min_value=0.01, format="%.2f")
+    st.info("Upload your product sheet to generate SKU-level listings based on size variations.")
     
-    if st.button("Generate Listing Summary"):
-        if product_title:
-            st.subheader("Generated Listing Preview")
-            st.write(f"**Title:** {product_title}")
-            st.write(f"**Category:** {category}")
-            st.write(f"**Price:** ${price:.2f}")
-            st.markdown(f"**Description:** \n{description}")
-        else:
-            st.warning("Please enter a Product Title.")
+    # --- Channel Category Selector ---
+    st.subheader("1. Select Channel Type and Destination")
+    channel_category = st.radio(
+        "Channel Category", 
+        ("Ecommerce", "Quick Commerce"),
+        horizontal=True,
+        key="channel_category_radio"
+    )
+    
+    ecommerce_channels = [
+        'Amazon', 'Flipkart', 'Myntra', 'Meesho', 'Ajio', 'Jio Mart', 
+        'Nykaa', 'Mens XP', 'Tata Cliq', 'First Cry', 'Paytm Mall', 
+        'Snapdeal', 'IndiaMart', 'Shopify'
+    ]
+    quick_commerce_channels = [
+        'Blinkit', 'Zepto', 'Swiggy Instamart', 'Dunzo Daily', 'BigBasket', 
+        'Amazon Fresh', 'Flipkart Minutes', 'Myntra (M-Now)', 'FreshToHome'
+    ]
+    
+    if channel_category == "Ecommerce":
+        channels = ecommerce_channels
+    else:
+        channels = quick_commerce_channels
+        
+    selected_channels = st.multiselect(
+        f"Select {channel_category} Channels",
+        options=channels,
+        default=channels[0]
+    )
+
+    # --- CSV Uploader ---
+    st.subheader("2. Upload Product CSV")
+    uploaded_file = st.file_uploader(
+        "Choose a CSV file (e.g., your Meesho/Flipkart format)", 
+        type="csv", 
+        key="listing_maker_uploader"
+    )
+    
+    # Option to skip header (though most e-commerce sheets have headers)
+    header_option = st.checkbox("CSV file includes header row", value=True)
+
+    if uploaded_file is not None:
+        try:
+            # Read CSV with or without header
+            header = 0 if header_option else None
+            df_uploaded = pd.read_csv(uploaded_file, header=header)
+            
+            # If no header, use default column names (C1, C2, etc.)
+            if header is None:
+                df_uploaded.columns = [f"C{i+1}" for i in range(df_uploaded.shape[1])]
+
+            st.success(f"File uploaded successfully. {df_uploaded.shape[0]} base products found.")
+            st.caption("First 5 rows of uploaded data:")
+            st.dataframe(df_uploaded.head(), use_container_width=True)
+
+            # --- Listing Generation ---
+            if st.button("Generate SKU Listings and Download"):
+                
+                with st.spinner('Generating SKU listings...'):
+                    # The core processing function
+                    df_final = generate_sku_listings(df_uploaded.copy())
+                    
+                    if df_final is not None:
+                        st.subheader("3. Generated Listings Preview")
+                        st.write(f"Total SKU-level listings generated: **{df_final.shape[0]}**")
+                        st.dataframe(df_final.head(10), use_container_width=True)
+                        
+                        # Prepare CSV for download
+                        csv_buffer = io.StringIO()
+                        df_final.to_csv(csv_buffer, index=False)
+                        csv_data = csv_buffer.getvalue().encode()
+                        
+                        # Download button
+                        st.download_button(
+                            label="Download Final SKU CSV",
+                            data=csv_data,
+                            file_name=f"SKU_Listings_for_{'_'.join(selected_channels)}.csv",
+                            mime="text/csv"
+                        )
+                        st.success("Listings generated and ready for download.")
+
+        except Exception as e:
+            st.error(f"Error processing file: {e}")
+            st.warning("Please ensure the uploaded file is a valid CSV and includes the correct columns if the header option is checked.")
 
 def image_optimizer_tab():
     st.title("✨ Image Optimizer")
     st.info("Compress and resize images to improve page load times.")
-    # ... rest of the image_optimizer_tab logic ...
+    
     uploaded_file = st.file_uploader("Upload Image to Optimize", type=["jpg", "jpeg", "png"], key="optimizer_uploader")
     
     if uploaded_file is not None:
@@ -223,7 +336,7 @@ def image_optimizer_tab():
 def listing_optimizer_tab():
     st.title("📈 Listing Optimizer")
     st.info("Analyze and improve your current product listing text for better conversion and SEO.")
-    # ... rest of the listing_optimizer_tab logic ...
+    
     listing_text = st.text_area("Paste your current product listing description here:", height=300)
     
     if st.button("Analyze & Suggest Improvements"):
@@ -241,7 +354,7 @@ def listing_optimizer_tab():
 def keyword_extractor_tab():
     st.title("🔍 Key Word Extractor")
     st.info("Extract relevant, high-ranking keywords from competitors or product ideas.")
-    # ... rest of the keyword_extractor_tab logic ...
+    
     seed_phrase = st.text_input("Enter a seed phrase or competitor's product name:")
     
     if st.button("Extract Keywords"):
@@ -266,7 +379,6 @@ def configuration_tab():
         
         st.subheader("Interface Controls")
         
-        # Admin control to show/hide social icons
         st.session_state.show_social_icons = st.toggle(
             "Show Social Media Icons in Footer", 
             value=st.session_state.show_social_icons, 
@@ -309,7 +421,7 @@ def run_app():
         
     # --- B. MAIN APPLICATION INTERFACE (After Login) ---
     else:
-        # Define tabs list dynamically
+        # Define mapping of feature names to functions
         tabs_map = {
             "🖼️ Image Uploader": image_uploader_tab,
             "📝 Listing Maker": listing_maker_tab,
@@ -318,7 +430,6 @@ def run_app():
             "🔍 Key Word Extractor": keyword_extractor_tab,
         }
         
-        # Add Admin tab if user is admin
         if st.session_state.is_admin:
             tabs_map["🔧 Configuration (Admin)"] = configuration_tab
 
@@ -327,7 +438,7 @@ def run_app():
         st.sidebar.markdown(f"**Role:** {USER_ACCESS.get(st.session_state.username, 'N/A')}")
         st.sidebar.markdown("---")
         
-        # Sidebar Navigation (Radio buttons replace tabs)
+        # Sidebar Navigation
         selected_option = st.sidebar.radio("Navigation", list(tabs_map.keys()))
         
         st.sidebar.markdown("---")
