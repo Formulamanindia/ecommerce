@@ -1,4 +1,4 @@
-## main_app.py - FINAL VERSION WITH PRICING TOOL UPDATE
+## main_app.py - FINAL VERSION WITH ROBUST FLIPKART FILE UPLOADER
 
 import streamlit as st
 from PIL import Image
@@ -356,74 +356,90 @@ def pricing_tool_tab():
 
                 st.markdown("---")
                 
-                # --- File Uploader and Processing ---
+                # --- File Uploader and Processing (FIXED FOR ENCODING) ---
                 uploaded_file = st.file_uploader(
                     "Upload Flipkart Listing File (CSV/Excel compatible)",
-                    type=["csv", "xlsx"],
+                    type=["csv", "xlsx", "xls"], # Added "xls"
                     key=f'{name}_uploader'
                 )
 
                 if uploaded_file is not None and st.button("Calculate & Prepare Download", key=f'{name}_calculate_btn'):
                     
-                    try:
-                        # 1. Read file
-                        if uploaded_file.name.endswith('.csv'):
-                            # Use keep_default_na=False to keep blank strings as blank, not NaN
+                    df = None
+                    
+                    # 1. Read file with robust CSV/Excel handling
+                    file_extension = uploaded_file.name.split('.')[-1].lower()
+
+                    if file_extension == 'csv':
+                        try:
+                            # Try standard UTF-8 first
                             df = pd.read_csv(uploaded_file, keep_default_na=False) 
-                        else:
-                            df = pd.read_excel(uploaded_file, keep_default_na=False)
-                            
-                        # Ensure 'Bank Settlement' column exists
-                        if 'Bank Settlement' not in df.columns:
-                            st.error("Error: The uploaded file must contain a column named 'Bank Settlement'.")
+                        except UnicodeDecodeError:
+                            # If UTF-8 fails, try common Excel-derived encodings
+                            st.warning("UTF-8 decoding failed. Trying alternative encodings (cp1252/latin-1)...")
+                            try:
+                                uploaded_file.seek(0) # IMPORTANT: Reset file pointer
+                                df = pd.read_csv(uploaded_file, keep_default_na=False, encoding='cp1252')
+                            except:
+                                uploaded_file.seek(0) # Reset again
+                                df = pd.read_csv(uploaded_file, keep_default_na=False, encoding='latin-1')
+                        except Exception as e:
+                            st.error(f"Error reading CSV file: {e}")
                             return
+                    elif file_extension in ['xlsx', 'xls']:
+                        try:
+                            df = pd.read_excel(uploaded_file, keep_default_na=False)
+                        except Exception as e:
+                            st.error(f"Error reading Excel file: {e}")
+                            return
+                    else:
+                        st.error("Unsupported file format. Please upload a CSV or XLSX/XLS file.")
+                        return
 
-                        st.success(f"File loaded successfully. Processing {df.shape[0]} rows...")
-                        
-                        # 2. Calculation Logic
-                        multiplier = 1 + (increase_percent / 100)
-                        
-                        # Convert to numeric, coercing errors to NaN. 
-                        # This handles non-numeric and blank strings that were not converted to NaN by keep_default_na=False
-                        df['BS_Num'] = pd.to_numeric(df['Bank Settlement'], errors='coerce')
+                    # Check if DataFrame was successfully created and if Bank Settlement column exists
+                    if df is None or 'Bank Settlement' not in df.columns:
+                        st.error("Error: The uploaded file must contain a column named 'Bank Settlement' and be a readable format.")
+                        return
 
-                        # Identify rows that meet criteria (within range AND non-blank/numeric)
-                        condition = (
-                            (df['BS_Num'] >= min_bs) & 
-                            (df['BS_Num'] <= max_bs) & 
-                            (~df['BS_Num'].isna()) # Ensure it was successfully converted to a number
-                        )
+                    st.success(f"File loaded successfully. Processing {df.shape[0]} rows...")
+                    
+                    # 2. Calculation Logic
+                    multiplier = 1 + (increase_percent / 100)
+                    
+                    # Convert to numeric, coercing errors to NaN. 
+                    df['BS_Num'] = pd.to_numeric(df['Bank Settlement'], errors='coerce')
 
-                        # Apply the increase to the original 'Bank Settlement' column for filtered rows.
-                        # The .round(2) ensures standard currency precision.
-                        df.loc[condition, 'Bank Settlement'] = (
-                            df.loc[condition, 'BS_Num'] * multiplier
-                        ).round(2)
-                        
-                        # Remove temporary column
-                        df.drop(columns=['BS_Num'], inplace=True)
+                    # Identify rows that meet criteria (within range AND non-blank/numeric)
+                    condition = (
+                        (df['BS_Num'] >= min_bs) & 
+                        (df['BS_Num'] <= max_bs) & 
+                        (~df['BS_Num'].isna()) # Ensure it was successfully converted to a number
+                    )
 
-                        st.subheader("✅ Calculation Complete")
-                        st.write(f"Updated **{condition.sum()}** rows out of {df.shape[0]}.")
-                        
-                        # 3. Download Preparation
-                        csv_buffer = io.StringIO()
-                        # Write to CSV. If 'Bank Settlement' has blank values (empty string), they will be preserved.
-                        df.to_csv(csv_buffer, index=False)
-                        csv_data = csv_buffer.getvalue().encode('utf-8')
-                        
-                        st.download_button(
-                            label="Download Updated Flipkart File (CSV)",
-                            data=csv_data,
-                            file_name=f"Flipkart_Price_Updated_{min_bs}_{max_bs}_plus{increase_percent}%.csv",
-                            mime="text/csv"
-                        )
-                        st.dataframe(df.head(5)) # Show preview
+                    # Apply the increase to the original 'Bank Settlement' column for filtered rows.
+                    df.loc[condition, 'Bank Settlement'] = (
+                        df.loc[condition, 'BS_Num'] * multiplier
+                    ).round(2)
+                    
+                    # Remove temporary column
+                    df.drop(columns=['BS_Num'], inplace=True)
 
-                    except Exception as e:
-                        st.error(f"An unexpected error occurred during processing. Please ensure the file is correctly formatted: {e}")
-                        st.warning("Tip: Check your file format (CSV/Excel) and ensure the column name **'Bank Settlement'** is present.")
-                        
+                    st.subheader("✅ Calculation Complete")
+                    st.write(f"Updated **{condition.sum()}** rows out of {df.shape[0]}.")
+                    
+                    # 3. Download Preparation
+                    csv_buffer = io.StringIO()
+                    df.to_csv(csv_buffer, index=False)
+                    csv_data = csv_buffer.getvalue().encode('utf-8')
+                    
+                    st.download_button(
+                        label="Download Updated Flipkart File (CSV)",
+                        data=csv_data,
+                        file_name=f"Flipkart_Price_Updated_{min_bs}_{max_bs}_plus{increase_percent}%.csv",
+                        mime="text/csv"
+                    )
+                    st.dataframe(df.head(5)) # Show preview
+
             else:
                 # --- Work in Progress for all other marketplaces (Amazon, Meesho, etc.) ---
                 st.subheader(f"Pricing Calculator for {name}")
