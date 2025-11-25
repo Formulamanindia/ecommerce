@@ -22,7 +22,7 @@ AURORA_TRANSITION = "all 0.3s ease"
 
 
 def apply_custom_css():
-    """Applies custom CSS for the Aurora Admin Panel look and feel."""
+    """Applies custom CSS for the Aurora Admin Panel look and feel, using simplified selectors."""
     
     custom_css = f"""
     <style>
@@ -37,55 +37,54 @@ def apply_custom_css():
     }}
     
     /* Sidebar Styling */
-    .css-1d391kg, .css-1dp5f7e {{ 
+    /* Target the overall sidebar container and background */
+    [data-testid="stSidebar"] {{
         background-color: {AURORA_SIDEBAR_BG};
         color: {AURORA_CARD_BG};
     }}
-    .stSidebar .stMarkdown p, .stSidebar .stMarkdown h2 {{
+    /* Ensure sidebar text is visible */
+    [data-testid="stSidebar"] .stMarkdown p, 
+    [data-testid="stSidebar"] .stMarkdown h2 {{
         color: {AURORA_CARD_BG} !important;
     }}
 
-    /* Sidebar Radio Button Styling (Navigation Links) - Aurora style */
-    .stRadio > label {{
+    /* --- Sidebar Radio Button Styling (Navigation Links) --- */
+    /* Target the label wrapper for all options */
+    [data-testid="stSidebar"] .stRadio > label {{
         padding: 10px 15px; 
         margin: 3px 0;
         border-radius: {AURORA_BORDER_RADIUS}; 
-        color: {AURORA_SECONDARY_TEXT}; /* Default link text is lighter on dark background */
+        color: {AURORA_SECONDARY_TEXT}; 
         font-weight: 500;
         transition: {AURORA_TRANSITION};
         border-left: 3px solid transparent; 
     }}
-    .stRadio > label:hover {{
+    /* Hover state */
+    [data-testid="stSidebar"] .stRadio > label:hover {{
         background-color: rgba(255, 255, 255, 0.05);
         color: {AURORA_CARD_BG};
         border-left: 3px solid {AURORA_ACCENT_BLUE};
     }}
-    /* Highlight the checked radio button as the active page */
-    .stRadio > label:has(input:checked) {{
+    /* Active/Checked state - Targeting the Streamlit-generated div next to the radio input */
+    [data-testid="stSidebar"] .stRadio input[type="radio"]:checked + div {{
         background-color: rgba(255, 255, 255, 0.1) !important; 
         color: {AURORA_ACCENT_BLUE} !important; 
         font-weight: 600;
         border-left: 5px solid {AURORA_ACCENT_BLUE} !important; 
     }}
 
-    /* --- Input Fields (Rounded and Clean) --- */
-    .stTextInput>div>div>input, .stSelectbox>div>div>div, 
-    .stTextArea>div>div>textarea, .stFileUploader>div>div,
-    .stDateInput>div>div>div {{
-        border-radius: {AURORA_BORDER_RADIUS};
-        border: 1px solid #dee2e6;
-        box-shadow: none;
-        transition: {AURORA_TRANSITION};
-    }}
-    .stTextInput>div>div>input:focus, .stTextArea>div>div>textarea:focus {{
-        border-color: {AURORA_ACCENT_BLUE};
-        box-shadow: 0 0 0 0.1rem rgba(2, 114, 180, 0.25);
+    /* Hide the radio button dot in the sidebar */
+    [data-testid="stSidebar"] .stRadio > label > div:first-child {{
+        display: none !important;
     }}
 
     /* --- Main Content Container (Floating Cards/Blocks) --- */
-    /* Apply Aurora style to all main content blocks */
-    .stAlert, .stMarkdown, .stTable, .stDataFrame, .stExpander, .stContainer,
-    .stApp .block-container {{
+    /* Target Streamlit's main content block containers for the white card look */
+    .stAlert, .stMarkdown, .stTable, .stDataFrame, .stExpander, 
+    [data-testid*="stVerticalBlock"], 
+    [data-testid*="stHorizontalBlock"],
+    [data-testid*="stContainer"]
+    {{
         border-radius: {AURORA_BORDER_RADIUS}; 
         box-shadow: {AURORA_SOFT_SHADOW}; 
         padding: 1rem;
@@ -94,18 +93,29 @@ def apply_custom_css():
         margin-bottom: 20px;
     }}
     
-    /* Remove Streamlit default padding for main content block container */
+    /* Ensure the top-level block container is transparent and doesn't cast a shadow */
     .stApp .block-container {{
         padding-top: 2rem;
         padding-bottom: 2rem;
         padding-left: 1rem;
         padding-right: 1rem;
-        box-shadow: none; /* Only inner containers/cards should have shadows */
-        background-color: {AURORA_MAIN_BG};
+        box-shadow: none !important; 
+        background-color: {AURORA_MAIN_BG} !important; 
     }}
 
-    /* --- KPI Card Container Styling --- */
-    /* Target all buttons used for the cards */
+    /* --- Input Fields (Simplified) --- */
+    .stTextInput>div>div>input, .stSelectbox>div>div>div, 
+    .stTextArea>div>div>textarea, .stFileUploader>div>div,
+    .stDateInput>div>div>div {{
+        border-radius: {AURORA_BORDER_RADIUS};
+        border: 1px solid #dee2e6;
+        box-shadow: none;
+        transition: {AURORA_TRANSITION};
+        /* Override card background if applied by general selector */
+        background-color: white; 
+    }}
+
+    /* --- KPI Card Container Styling (Buttons) --- */
     .stApp .stButton>button {{
         background-color: {AURORA_CARD_BG}; 
         color: {AURORA_PRIMARY_TEXT};
@@ -147,11 +157,6 @@ def apply_custom_css():
         background-color: {AURORA_ACCENT_HOVER};
         box-shadow: none;
         transform: translateY(-1px);
-    }}
-
-    /* Hide the radio button dot in the sidebar */
-    .stRadio > label > div:first-child {{
-        display: none !important;
     }}
 
     /* Custom CSS for KPI Card Inner Content (for HTML) */
