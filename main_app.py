@@ -1,4 +1,4 @@
-## main_app.py - FINAL VERSION WITH NEW CSV FORMAT SUPPORT & REFINED DESCRIPTION GENERATION
+## main_app.py - FINAL VERSION WITH PRICING TOOL
 
 import streamlit as st
 from PIL import Image
@@ -125,6 +125,20 @@ def apply_custom_css():
         font-size: 1.2em;
         text-decoration: none;
     }}
+    
+    /* Custom style for small logo display within tabs */
+    .logo-container {{
+        display: flex;
+        align-items: center;
+        margin-bottom: 10px;
+    }}
+    .logo-container img {{
+        max-width: 50px;
+        height: 50px;
+        margin-right: 15px;
+        border-radius: 5px;
+        object-fit: contain; /* Ensures 1:1 ratio is handled visually */
+    }}
     </style>
     """
     st.markdown(custom_css, unsafe_allow_html=True)
@@ -151,7 +165,7 @@ def display_footer():
     """
     st.markdown(footer_html, unsafe_allow_html=True)
 
-# --- 3. CORE LOGIC FUNCTIONS ---
+# --- 3. CORE LOGIC FUNCTIONS (Description Generation remains the same) ---
 
 def get_sample_csv():
     """Generates the sample CSV data for download based on defined headers."""
@@ -206,8 +220,6 @@ def generate_description_mock(row):
         return "No comprehensive description generated due to missing product name or category."
         
     # Generate engaging description based on user logic:
-    # Tone: Warm, trustworthy. Focus: Comfort, fit, usage, buyer benefits.
-    # Words that were bolded are now capitalized instead to provide mild emphasis without markdown.
     description = (
         f"Elevate your wardrobe with this exquisite {category} from {brand}. "
         f"Crafted from ultra-soft {fabric}, this piece guarantees all-day COMFORT and a premium feel. "
@@ -246,7 +258,7 @@ def generate_sku_listings(df):
             return None
             
     # --- FEATURE: Generate/Update Product Description ---
-    # Apply the generation ONLY if the description field is empty/missing (as per instruction)
+    # Apply the generation ONLY if the description field is empty/missing 
     df[desc_col] = df.apply(
         lambda row: generate_description_mock(row) 
         if pd.isna(row[desc_col]) or str(row[desc_col]).strip() == "" 
@@ -296,7 +308,87 @@ def generate_sku_listings(df):
     
     return df_sorted
 
-# --- 4. FEATURE IMPLEMENTATION (Other features remain the same) ---
+# --- 4. FEATURE IMPLEMENTATION (New Pricing Tool Tab) ---
+
+# Placeholder URLs for demonstration purposes (replace with actual URLs or uploaded images)
+LOGO_URLS = {
+    "Amazon": "https://upload.wikimedia.org/wikipedia/commons/4/4a/Amazon_icon.svg",
+    "Flipkart": "https://upload.wikimedia.org/wikipedia/commons/3/36/Flipkart_logo.png",
+    "Meesho": "https://images.meesho.com/images/branding/meesho-horizontal-logo.svg"
+}
+
+def display_marketplace_logo(name):
+    """Displays the logo for a marketplace in a small, 1:1 responsive manner."""
+    st.markdown(f'<div class="logo-container">', unsafe_allow_html=True)
+    st.image(LOGO_URLS[name], width=50, caption=name)
+    st.markdown(f'</div>', unsafe_allow_html=True)
+
+def pricing_tool_tab():
+    st.title("💰 Pricing Tool")
+    st.info("Calculate competitive selling prices and net profit across different marketplaces.")
+
+    amazon_tab, flipkart_tab, meesho_tab = st.tabs(["Amazon", "Flipkart", "Meesho"])
+
+    with amazon_tab:
+        st.subheader("Amazon Pricing Calculator")
+        
+        # Logo Display
+        col1, col2 = st.columns([1, 6])
+        with col1:
+             st.image(LOGO_URLS["Amazon"], width=50, use_column_width='always') # Use st.image for better control
+        with col2:
+             st.markdown("### Amazon FBA/Easy Ship")
+
+        # Pricing Inputs (Placeholder)
+        cost_of_product = st.number_input("Cost of Product (Excl. Tax)", value=100.0, min_value=0.0, key='amazon_cost')
+        target_margin = st.slider("Target Margin (%)", 5, 50, 20, key='amazon_margin')
+        
+        st.write("---")
+        st.subheader("Estimated Fees & Final Price")
+        st.markdown(f"* Commission Fee (Placeholder: 12%): **₹{cost_of_product * 0.12:.2f}**")
+        st.markdown(f"* Shipping/FBA Fee (Placeholder): **₹70.00**")
+        st.success(f"Recommended Selling Price: **₹{cost_of_product / (1 - (target_margin/100) - 0.12) + 70:.2f}** (Mock Calculation)")
+
+    with flipkart_tab:
+        st.subheader("Flipkart Pricing Calculator")
+        
+        # Logo Display
+        col1, col2 = st.columns([1, 6])
+        with col1:
+             st.image(LOGO_URLS["Flipkart"], width=50, use_column_width='always')
+        with col2:
+             st.markdown("### Flipkart Smart/Standard")
+             
+        # Pricing Inputs (Placeholder)
+        cost_of_product = st.number_input("Cost of Product (Excl. Tax)", value=100.0, min_value=0.0, key='flipkart_cost')
+        target_margin = st.slider("Target Margin (%)", 5, 50, 20, key='flipkart_margin')
+        
+        st.write("---")
+        st.subheader("Estimated Fees & Final Price")
+        st.markdown(f"* Commission Fee (Placeholder: 15%): **₹{cost_of_product * 0.15:.2f}**")
+        st.markdown(f"* Shipping/Warehouse Fee (Placeholder): **₹65.00**")
+        st.success(f"Recommended Selling Price: **₹{cost_of_product / (1 - (target_margin/100) - 0.15) + 65:.2f}** (Mock Calculation)")
+        
+    with meesho_tab:
+        st.subheader("Meesho Pricing Calculator")
+        
+        # Logo Display
+        col1, col2 = st.columns([1, 6])
+        with col1:
+             st.image(LOGO_URLS["Meesho"], width=50, use_column_width='always')
+        with col2:
+             st.markdown("### Meesho Zero Commission")
+             
+        # Pricing Inputs (Placeholder)
+        cost_of_product = st.number_input("Cost of Product (Excl. Tax)", value=100.0, min_value=0.0, key='meesho_cost')
+        target_margin = st.slider("Target Margin (%)", 5, 50, 20, key='meesho_margin')
+        
+        st.write("---")
+        st.subheader("Estimated Fees & Final Price")
+        st.markdown("* Commission Fee: **₹0.00** (Zero Commission)")
+        st.markdown(f"* Shipping/Collection Fee (Placeholder): **₹80.00**")
+        st.success(f"Recommended Selling Price: **₹{cost_of_product / (1 - (target_margin/100)) + 80:.2f}** (Mock Calculation)")
+
 
 def image_uploader_tab():
     st.title("🖼️ Image Uploader")
@@ -551,8 +643,9 @@ def run_app():
     else:
         # Define mapping of feature names to functions
         tabs_map = {
-            "🖼️ Image Uploader": image_uploader_tab,
             "📝 Listing Maker": listing_maker_tab,
+            "💰 Pricing Tool": pricing_tool_tab, # NEW TAB ADDED HERE
+            "🖼️ Image Uploader": image_uploader_tab,
             "✨ Image Optimizer": image_optimizer_tab,
             "📈 Listing Optimizer": listing_optimizer_tab,
             "🔍 Key Word Extractor": keyword_extractor_tab,
