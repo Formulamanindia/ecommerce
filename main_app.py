@@ -346,7 +346,7 @@ def pricing_tool_tab():
                      try:
                          st.image(logo_url, width=50, height=50) 
                      except Exception:
-                         st.error(f"Logo failed to load for {name}")
+                         st.markdown("No Logo Set")
                  else:
                      st.markdown("No Logo Set")
             with col2:
@@ -577,7 +577,27 @@ def listing_maker_tab():
                                 st.warning("No listings were generated. Check if the 'Variations (comma separated)*' column is correctly filled.")
                                 return
                                 
-                            st.dataframe(df_final.head(10), use_container_width=True)
+                            # --- START: New Image Display Logic ---
+                            column_configuration = {
+                                "Main Image*": st.column_config.ImageColumn(
+                                    "Product Image", # Title for the image column
+                                    help="Visual reference for the main image URL.",
+                                    width="small" 
+                                ),
+                                # Optionally disable other image URL columns for a cleaner view
+                                "1 st Image": st.column_config.TextColumn(disabled=True),
+                                "2nd Image": st.column_config.TextColumn(disabled=True),
+                                "3rd Image": st.column_config.TextColumn(disabled=True),
+                                "4th Image": st.column_config.TextColumn(disabled=True),
+                            }
+                            
+                            st.dataframe(
+                                df_final.head(10), 
+                                use_container_width=True, 
+                                column_config=column_configuration,
+                                hide_index=True 
+                            )
+                            # --- END: New Image Display Logic ---
                             
                             csv_buffer = io.StringIO()
                             df_final.to_csv(csv_buffer, index=False)
@@ -784,36 +804,4 @@ def run_app():
             "📝 Listing Maker": listing_maker_tab,
             "💰 Pricing Tool": pricing_tool_tab,
             "🖼️ Image Uploader": image_uploader_tab,
-            "✨ Image Optimizer": image_optimizer_tab,
-            "📈 Listing Optimizer": listing_optimizer_tab,
-            "🔍 Key Word Extractor": keyword_extractor_tab,
-        }
-        
-        if st.session_state.is_admin:
-            tabs_map["🔧 Configuration (Admin)"] = configuration_tab
-
-        # Sidebar Header - Added a placeholder logo area
-        st.sidebar.markdown(f"## **E-Commerce Dashboard**")
-        st.sidebar.markdown(f"**User:** {st.session_state.username}")
-        st.sidebar.markdown(f"**Role:** {USER_ACCESS.get(st.session_state.username, 'N/A')}")
-        st.sidebar.markdown("---")
-        
-        # Sidebar Navigation
-        selected_option = st.sidebar.radio("Navigation", list(tabs_map.keys()))
-        
-        st.sidebar.markdown("---")
-        
-        if st.sidebar.button("Logout"):
-            st.session_state.logged_in = False
-            st.session_state.username = None
-            st.session_state.is_admin = False
-            st.rerun()
-
-        # Execute the function corresponding to the selected option
-        tabs_map[selected_option]()
-
-    # Display the required footer credit and social icons
-    display_footer()
-
-if __name__ == "__main__":
-    run_app()
+            "✨ Image Optimizer":
