@@ -1,4 +1,4 @@
-## main_app.py - FINAL VERSION WITH NEW CSV FORMAT SUPPORT
+## main_app.py - FINAL VERSION WITH NEW CSV FORMAT SUPPORT & DESCRIPTION GENERATION
 
 import streamlit as st
 from PIL import Image
@@ -157,7 +157,7 @@ def get_sample_csv():
     """Generates the sample CSV data for download based on defined headers."""
     # Create a DataFrame with only headers and one sample row (matches the file structure)
     data = {
-        'Product Name*': ["Sample Name"],
+        'Product Name*': ["Premium Cotton Tee"],
         'Variations (comma separated)*': ["S,M,L"],
         'Product Color*': ["Red"],
         'Group Name*': ["G_TS_RED"],
@@ -187,6 +187,27 @@ def get_sample_csv():
     df.to_csv(csv_buffer, index=False)
     return csv_buffer.getvalue().encode()
 
+def generate_description_mock(row):
+    """
+    MOCK FUNCTION: Simulates generating a product description based on name and category 
+    by querying the web.
+    """
+    product_name = row.get('Product Name*')
+    category = row.get('Product Category*')
+    color = row.get('Product Color*')
+    
+    # Check for mandatory input for description
+    if pd.isna(product_name) or pd.isna(category):
+        return "No description available due to missing product name or category."
+        
+    return (
+        f"Introducing the high-quality **{product_name}** in a stunning **{color}** shade. "
+        f"This essential piece falls under the **{category}** category, known for its superior "
+        f"**{row.get('Fabric Type*', 'material')}** and modern design. With an MRP of ₹{row.get('MRP*')}, "
+        f"you can purchase this genuine **{row.get('Brand*', 'unbranded')}** product for only ₹{row.get('Selling Price*')}. "
+        f"It's perfect for all occasions and guaranteed to meet your expectations. Proudly made in **{row.get('Country Of Origin*', 'India')}**."
+    )
+
 
 def generate_sku_listings(df):
     """
@@ -194,19 +215,27 @@ def generate_sku_listings(df):
     creates unique SKU codes (SKU--COLOR--SIZE), and sorts by Group Name.
     """
     
-    # --- Corrected column name based on latest file ---
     size_col = 'Variations (comma separated)*'
-    # ---------------------------------------------------
-    
     sku_col = 'SKU Code*'
     group_col = 'Group Name*'
     color_col = 'Product Color*'
+    desc_col = 'Product Description*'
 
     # 1. Mandatory Column Check
     for col in MANDATORY_COLS:
         if col not in df.columns:
             st.error(f"Mandatory column missing: '{col}'. Please correct your CSV header.")
             return None
+            
+    # --- NEW FEATURE: Generate/Update Product Description ---
+    # Apply the mock generation only to rows where the description is currently empty/missing
+    df[desc_col] = df.apply(
+        lambda row: generate_description_mock(row) 
+        if pd.isna(row[desc_col]) or row[desc_col] == "" 
+        else row[desc_col], 
+        axis=1
+    )
+    # -----------------------------------------------------
     
     # 2. Split and Explode
     df[size_col] = df[size_col].fillna('').astype(str).str.replace(' ', '').str.upper().str.split(',')
@@ -249,7 +278,7 @@ def generate_sku_listings(df):
     
     return df_sorted
 
-# --- 4. FEATURE IMPLEMENTATION (Listing Maker) ---
+# --- 4. FEATURE IMPLEMENTATION (Other features remain the same) ---
 
 def image_uploader_tab():
     st.title("🖼️ Image Uploader")
@@ -327,17 +356,22 @@ def listing_maker_tab():
                 # --- Listing Generation ---
                 if st.button("Generate SKU Listings and Download"):
                     
-                    with st.spinner('Generating SKU listings...'):
+                    with st.spinner('Generating SKU listings and descriptions...'):
                         df_final = generate_sku_listings(df_uploaded.copy())
                         
                         if df_final is not None:
                             st.subheader("4. Generated Listings Preview")
                             st.write(f"Total SKU-level listings generated: **{df_final.shape[0]}**")
-                            # Display the new SKU format example
+                            
+                            # Display example of generated content
                             try:
-                                st.caption(f"Example SKU Format: **{df_final['SKU Code*'].iloc[0]}**")
+                                sample_sku = df_final['SKU Code*'].iloc[0]
+                                sample_desc = df_final['Product Description*'].iloc[0]
+                                
+                                with st.expander(f"View Sample Generated Description for SKU: {sample_sku}"):
+                                    st.markdown(sample_desc)
+                                    
                             except IndexError:
-                                # Handle case where df_final is empty but not None
                                 st.warning("No listings were generated. Check if the 'Variations (comma separated)*' column is correctly filled.")
                                 return
                                 
@@ -367,7 +401,7 @@ def listing_maker_tab():
 
 
 def image_optimizer_tab():
-    st.title("✨ Image Optimizer")
+    st.title("🖼️ Image Optimizer")
     st.info("Compress and resize images to improve page load times.")
     
     uploaded_file = st.file_uploader("Upload Image to Optimize", type=["jpg", "jpeg", "png"], key="optimizer_uploader")
