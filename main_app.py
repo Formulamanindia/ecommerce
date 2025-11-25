@@ -1,4 +1,4 @@
-## main_app.py - FINAL VERSION WITH PRICING TOOL
+## main_app.py - FINAL VERSION WITH PRICING TOOL UPDATE
 
 import streamlit as st
 from PIL import Image
@@ -21,7 +21,7 @@ USER_ACCESS = {
 }
 ADMIN_USER = "Globalite"
 
-# Define mandatory CSV headers with * (Matches the latest Ecommerce_Listing_Sample_Template.csv)
+# Define mandatory CSV headers with *
 SAMPLE_CSV_HEADERS = [
     'Product Name*', 'Variations (comma separated)*', 'Product Color*', 'Group Name*', 
     'Fabric Type*', 'SKU Code*', 'MRP*', 'Selling Price*', 'Brand*', 'HSN*', 
@@ -32,6 +32,12 @@ SAMPLE_CSV_HEADERS = [
 
 MANDATORY_COLS = [col for col in SAMPLE_CSV_HEADERS if col.endswith('*')]
 
+# Initial marketplace data (used for first-time session initialization)
+DEFAULT_MARKETPLACES = {
+    "Amazon": "https://upload.wikimedia.org/wikipedia/commons/4/4a/Amazon_icon.svg",
+    "Flipkart": "https://upload.wikimedia.org/wikipedia/commons/3/36/Flipkart_logo.png",
+    "Meesho": "https://images.meesho.com/images/branding/meesho-horizontal-logo.svg"
+}
 
 # Initialize Session State
 if 'logged_in' not in st.session_state:
@@ -41,8 +47,11 @@ if 'logged_in' not in st.session_state:
     
 if 'show_social_icons' not in st.session_state: 
     st.session_state.show_social_icons = True 
+    
+if 'marketplace_logos' not in st.session_state:
+    st.session_state.marketplace_logos = DEFAULT_MARKETPLACES
 
-# --- 2. CUSTOM CSS/INTERFACE (CSS remains unchanged for design consistency) ---
+# --- 2. CUSTOM CSS/INTERFACE ---
 
 def apply_custom_css():
     """Applies custom CSS for the Admin Panel look, referencing bankco's style."""
@@ -126,18 +135,9 @@ def apply_custom_css():
         text-decoration: none;
     }}
     
-    /* Custom style for small logo display within tabs */
-    .logo-container {{
-        display: flex;
-        align-items: center;
-        margin-bottom: 10px;
-    }}
-    .logo-container img {{
-        max-width: 50px;
-        height: 50px;
-        margin-right: 15px;
-        border-radius: 5px;
-        object-fit: contain; /* Ensures 1:1 ratio is handled visually */
+    /* Ensure marketplace logos are square */
+    .stImage > img {{
+        object-fit: contain;
     }}
     </style>
     """
@@ -165,11 +165,10 @@ def display_footer():
     """
     st.markdown(footer_html, unsafe_allow_html=True)
 
-# --- 3. CORE LOGIC FUNCTIONS (Description Generation remains the same) ---
+# --- 3. CORE LOGIC FUNCTIONS ---
 
 def get_sample_csv():
     """Generates the sample CSV data for download based on defined headers."""
-    # Create a DataFrame with only headers and one sample row (matches the file structure)
     data = {
         'Product Name*': ["Premium Cotton Tee"],
         'Variations (comma separated)*': ["S,M,L"],
@@ -194,20 +193,16 @@ def get_sample_csv():
         '4th Image': ["(Optional)"],
         'Product Description*': [""]
     }
-    # Ensure correct column order is maintained
     df = pd.DataFrame(data, columns=SAMPLE_CSV_HEADERS)
-    
     csv_buffer = io.StringIO()
     df.to_csv(csv_buffer, index=False)
     return csv_buffer.getvalue().encode()
 
 def generate_description_mock(row):
     """
-    MOCK FUNCTION: Generates a conversion-focused, keyword-rich product description 
-    (under 1400 characters) if the existing description field is empty, based on user instructions.
-    NOTE: Markdown bolding has been removed from the final output string.
+    MOCK FUNCTION: Generates a conversion-focused product description (under 1400 characters) 
+    if the existing description field is empty, with no markdown bolding.
     """
-    # Extract data with safe defaults
     title = row.get('Product Name*')
     category = row.get('Product Category*')
     color = row.get('Product Color*')
@@ -215,11 +210,9 @@ def generate_description_mock(row):
     brand = row.get('Brand*', 'a trusted source')
     sizes = row.get('Variations (comma separated)*', 'various sizes').replace(',', ', ')
     
-    # Check for mandatory input for description
     if pd.isna(title) or pd.isna(category):
         return "No comprehensive description generated due to missing product name or category."
         
-    # Generate engaging description based on user logic:
     description = (
         f"Elevate your wardrobe with this exquisite {category} from {brand}. "
         f"Crafted from ultra-soft {fabric}, this piece guarantees all-day COMFORT and a premium feel. "
@@ -231,7 +224,6 @@ def generate_description_mock(row):
         f"(Keywords: {title.replace(' ', ', ').replace('-', ',')}, {category}, {fabric}, {color})"
     )
     
-    # Enforce character limit
     MAX_CHARS = 1400
     if len(description) > MAX_CHARS:
         description = description[:MAX_CHARS - 3] + '...'
@@ -274,11 +266,8 @@ def generate_sku_listings(df):
     df_expanded.rename(columns={size_col: 'Size'}, inplace=True)
     
     # 3. Create a unique SKU for each variation (SKU--COLOR--SIZE)
-    
-    # Clean Color Column for SKU: UPPERCASE, remove spaces
     cleaned_color = df_expanded[color_col].astype(str).str.replace(' ', '').str.upper()
     
-    # New SKU format: SKU_CODE -- COLOR -- SIZE
     df_expanded['New SKU'] = (
         df_expanded[sku_col].astype(str) + 
         '--' + 
@@ -287,7 +276,6 @@ def generate_sku_listings(df):
         df_expanded['Size'].astype(str)
     )
     
-    # Drop the old SKU Code* and use the new one
     df_expanded.drop(columns=[sku_col], inplace=True)
     df_expanded.rename(columns={'New SKU': sku_col}, inplace=True)
 
@@ -296,105 +284,156 @@ def generate_sku_listings(df):
     
     cols = list(df_sorted.columns)
     
-    # Move SKU, Size, and Color to the front
     if 'Size' in cols:
         cols.insert(1, cols.pop(cols.index('Size')))
     if color_col in cols:
-        cols.insert(2, cols.pop(cols.index(color_col))) # Place Color after Size
+        cols.insert(2, cols.pop(cols.index(color_col)))
     if sku_col in cols:
-        cols.insert(0, cols.pop(cols.index(sku_col))) # Place SKU at the very front
+        cols.insert(0, cols.pop(cols.index(sku_col)))
 
     df_sorted = df_sorted[cols]
     
     return df_sorted
 
-# --- 4. FEATURE IMPLEMENTATION (New Pricing Tool Tab) ---
-
-# Placeholder URLs for demonstration purposes (replace with actual URLs or uploaded images)
-LOGO_URLS = {
-    "Amazon": "https://upload.wikimedia.org/wikipedia/commons/4/4a/Amazon_icon.svg",
-    "Flipkart": "https://upload.wikimedia.org/wikipedia/commons/3/36/Flipkart_logo.png",
-    "Meesho": "https://images.meesho.com/images/branding/meesho-horizontal-logo.svg"
-}
-
-def display_marketplace_logo(name):
-    """Displays the logo for a marketplace in a small, 1:1 responsive manner."""
-    st.markdown(f'<div class="logo-container">', unsafe_allow_html=True)
-    st.image(LOGO_URLS[name], width=50, caption=name)
-    st.markdown(f'</div>', unsafe_allow_html=True)
+# --- 4. FEATURE IMPLEMENTATION ---
 
 def pricing_tool_tab():
     st.title("💰 Pricing Tool")
     st.info("Calculate competitive selling prices and net profit across different marketplaces.")
 
-    amazon_tab, flipkart_tab, meesho_tab = st.tabs(["Amazon", "Flipkart", "Meesho"])
+    marketplace_names = list(st.session_state.marketplace_logos.keys())
+    
+    if not marketplace_names:
+        st.warning("No marketplaces configured. Please ask an Admin to add marketplaces in the Configuration tab.")
+        return
 
-    with amazon_tab:
-        st.subheader("Amazon Pricing Calculator")
-        
-        # Logo Display
-        col1, col2 = st.columns([1, 6])
-        with col1:
-             st.image(LOGO_URLS["Amazon"], width=50, use_column_width='always') # Use st.image for better control
-        with col2:
-             st.markdown("### Amazon FBA/Easy Ship")
+    # Dynamically create tabs based on configured marketplaces
+    tabs = st.tabs(marketplace_names)
 
-        # Pricing Inputs (Placeholder)
-        cost_of_product = st.number_input("Cost of Product (Excl. Tax)", value=100.0, min_value=0.0, key='amazon_cost')
-        target_margin = st.slider("Target Margin (%)", 5, 50, 20, key='amazon_margin')
-        
-        st.write("---")
-        st.subheader("Estimated Fees & Final Price")
-        st.markdown(f"* Commission Fee (Placeholder: 12%): **₹{cost_of_product * 0.12:.2f}**")
-        st.markdown(f"* Shipping/FBA Fee (Placeholder): **₹70.00**")
-        st.success(f"Recommended Selling Price: **₹{cost_of_product / (1 - (target_margin/100) - 0.12) + 70:.2f}** (Mock Calculation)")
+    for i, name in enumerate(marketplace_names):
+        with tabs[i]:
+            # Logo Display
+            logo_url = st.session_state.marketplace_logos.get(name, "")
+            col1, col2 = st.columns([1, 6])
+            with col1:
+                 if logo_url:
+                     try:
+                         st.image(logo_url, width=50, height=50) 
+                     except Exception:
+                         st.error(f"Logo failed to load for {name}")
+                 else:
+                     st.markdown("No Logo Set")
+            with col2:
+                 st.markdown(f"### {name} Channel Details")
 
-    with flipkart_tab:
-        st.subheader("Flipkart Pricing Calculator")
-        
-        # Logo Display
-        col1, col2 = st.columns([1, 6])
-        with col1:
-             st.image(LOGO_URLS["Flipkart"], width=50, use_column_width='always')
-        with col2:
-             st.markdown("### Flipkart Smart/Standard")
-             
-        # Pricing Inputs (Placeholder)
-        cost_of_product = st.number_input("Cost of Product (Excl. Tax)", value=100.0, min_value=0.0, key='flipkart_cost')
-        target_margin = st.slider("Target Margin (%)", 5, 50, 20, key='flipkart_margin')
-        
-        st.write("---")
-        st.subheader("Estimated Fees & Final Price")
-        st.markdown(f"* Commission Fee (Placeholder: 15%): **₹{cost_of_product * 0.15:.2f}**")
-        st.markdown(f"* Shipping/Warehouse Fee (Placeholder): **₹65.00**")
-        st.success(f"Recommended Selling Price: **₹{cost_of_product / (1 - (target_margin/100) - 0.15) + 65:.2f}** (Mock Calculation)")
-        
-    with meesho_tab:
-        st.subheader("Meesho Pricing Calculator")
-        
-        # Logo Display
-        col1, col2 = st.columns([1, 6])
-        with col1:
-             st.image(LOGO_URLS["Meesho"], width=50, use_column_width='always')
-        with col2:
-             st.markdown("### Meesho Zero Commission")
-             
-        # Pricing Inputs (Placeholder)
-        cost_of_product = st.number_input("Cost of Product (Excl. Tax)", value=100.0, min_value=0.0, key='meesho_cost')
-        target_margin = st.slider("Target Margin (%)", 5, 50, 20, key='meesho_margin')
-        
-        st.write("---")
-        st.subheader("Estimated Fees & Final Price")
-        st.markdown("* Commission Fee: **₹0.00** (Zero Commission)")
-        st.markdown(f"* Shipping/Collection Fee (Placeholder): **₹80.00**")
-        st.success(f"Recommended Selling Price: **₹{cost_of_product / (1 - (target_margin/100)) + 80:.2f}** (Mock Calculation)")
+            
+            if name == "Flipkart":
+                st.subheader("Flipkart Price Increase Tool")
+                st.info("Upload your Flipkart file and increase **'Bank Settlement'** prices within a specified range.")
 
+                # --- Calculation Inputs ---
+                col_calc_1, col_calc_2, col_calc_3 = st.columns(3)
+                
+                with col_calc_1:
+                    # Min Bank Settlement
+                    min_bs = st.number_input("Min Bank Settlement (₹)", value=100.0, min_value=0.0, key=f'{name}_min_bs')
+                
+                with col_calc_2:
+                    # Max Bank Settlement
+                    max_bs = st.number_input("Max Bank Settlement (₹)", value=500.0, min_value=min_bs, key=f'{name}_max_bs')
+                
+                with col_calc_3:
+                    # Static dropdown 1% to 10%
+                    increase_percent_options = [f"{p}%" for p in range(1, 11)]
+                    increase_percent_str = st.selectbox(
+                        "Price Increase Limit", 
+                        options=increase_percent_options, 
+                        index=0, 
+                        key=f'{name}_increase_percent'
+                    )
+                    # Convert '5%' to 5
+                    increase_percent = int(increase_percent_str.replace('%', '')) 
+
+                st.markdown("---")
+                
+                # --- File Uploader and Processing ---
+                uploaded_file = st.file_uploader(
+                    "Upload Flipkart Listing File (CSV/Excel compatible)",
+                    type=["csv", "xlsx"],
+                    key=f'{name}_uploader'
+                )
+
+                if uploaded_file is not None and st.button("Calculate & Prepare Download", key=f'{name}_calculate_btn'):
+                    
+                    try:
+                        # 1. Read file
+                        if uploaded_file.name.endswith('.csv'):
+                            # Use keep_default_na=False to keep blank strings as blank, not NaN
+                            df = pd.read_csv(uploaded_file, keep_default_na=False) 
+                        else:
+                            df = pd.read_excel(uploaded_file, keep_default_na=False)
+                            
+                        # Ensure 'Bank Settlement' column exists
+                        if 'Bank Settlement' not in df.columns:
+                            st.error("Error: The uploaded file must contain a column named 'Bank Settlement'.")
+                            return
+
+                        st.success(f"File loaded successfully. Processing {df.shape[0]} rows...")
+                        
+                        # 2. Calculation Logic
+                        multiplier = 1 + (increase_percent / 100)
+                        
+                        # Convert to numeric, coercing errors to NaN. 
+                        # This handles non-numeric and blank strings that were not converted to NaN by keep_default_na=False
+                        df['BS_Num'] = pd.to_numeric(df['Bank Settlement'], errors='coerce')
+
+                        # Identify rows that meet criteria (within range AND non-blank/numeric)
+                        condition = (
+                            (df['BS_Num'] >= min_bs) & 
+                            (df['BS_Num'] <= max_bs) & 
+                            (~df['BS_Num'].isna()) # Ensure it was successfully converted to a number
+                        )
+
+                        # Apply the increase to the original 'Bank Settlement' column for filtered rows.
+                        # The .round(2) ensures standard currency precision.
+                        df.loc[condition, 'Bank Settlement'] = (
+                            df.loc[condition, 'BS_Num'] * multiplier
+                        ).round(2)
+                        
+                        # Remove temporary column
+                        df.drop(columns=['BS_Num'], inplace=True)
+
+                        st.subheader("✅ Calculation Complete")
+                        st.write(f"Updated **{condition.sum()}** rows out of {df.shape[0]}.")
+                        
+                        # 3. Download Preparation
+                        csv_buffer = io.StringIO()
+                        # Write to CSV. If 'Bank Settlement' has blank values (empty string), they will be preserved.
+                        df.to_csv(csv_buffer, index=False)
+                        csv_data = csv_buffer.getvalue().encode('utf-8')
+                        
+                        st.download_button(
+                            label="Download Updated Flipkart File (CSV)",
+                            data=csv_data,
+                            file_name=f"Flipkart_Price_Updated_{min_bs}_{max_bs}_plus{increase_percent}%.csv",
+                            mime="text/csv"
+                        )
+                        st.dataframe(df.head(5)) # Show preview
+
+                    except Exception as e:
+                        st.error(f"An unexpected error occurred during processing. Please ensure the file is correctly formatted: {e}")
+                        st.warning("Tip: Check your file format (CSV/Excel) and ensure the column name **'Bank Settlement'** is present.")
+                        
+            else:
+                # --- Work in Progress for all other marketplaces (Amazon, Meesho, etc.) ---
+                st.subheader(f"Pricing Calculator for {name}")
+                st.info("🚧 **Work in Progress:** Advanced pricing tools and channel integration for this marketplace are currently under development. Please check back later.")
+                
 
 def image_uploader_tab():
     st.title("🖼️ Image Uploader")
     st.info("Upload and review your product images before processing.")
     uploaded_file = st.file_uploader("Choose an image...", type=["jpg", "jpeg", "png"])
-    
     if uploaded_file is not None:
         try:
             image = Image.open(uploaded_file)
@@ -423,25 +462,18 @@ def listing_maker_tab():
     
     if channel_category == "Ecommerce":
         channels = ecommerce_channels
-        
         selected_channels = st.multiselect(
             "Select Ecommerce Channels",
             options=channels,
             default=channels[0]
         )
-        
-        # --- Sample CSV Download ---
         st.subheader("2. Download Sample CSV Header")
-        st.markdown(f"Download the template below. Mandatory fields are marked with a `*` (e.g., `{MANDATORY_COLS[0]}`).")
-        
         st.download_button(
             label="Download Ecommerce Sample CSV",
             data=get_sample_csv(),
             file_name="Ecommerce_Listing_Sample_Template.csv",
             mime="text/csv"
         )
-        
-        # --- CSV Uploader ---
         st.subheader("3. Upload Product CSV")
         uploaded_file = st.file_uploader(
             "Choose a CSV file (must match the template header)", 
@@ -453,7 +485,6 @@ def listing_maker_tab():
 
         if uploaded_file is not None:
             try:
-                # Read CSV with or without header
                 header = 0 if header_option else None
                 df_uploaded = pd.read_csv(uploaded_file, header=header)
                 
@@ -463,9 +494,7 @@ def listing_maker_tab():
                 
                 st.success(f"File uploaded successfully. {df_uploaded.shape[0]} base products found.")
                 
-                # --- Listing Generation ---
                 if st.button("Generate SKU Listings and Download"):
-                    
                     with st.spinner('Generating SKU listings and descriptions...'):
                         df_final = generate_sku_listings(df_uploaded.copy())
                         
@@ -473,25 +502,20 @@ def listing_maker_tab():
                             st.subheader("4. Generated Listings Preview")
                             st.write(f"Total SKU-level listings generated: **{df_final.shape[0]}**")
                             
-                            # Display example of generated content
                             try:
                                 sample_sku = df_final['SKU Code*'].iloc[0]
-                                
                                 with st.expander(f"View Sample Generated Description for SKU: {sample_sku}"):
                                     st.markdown(df_final['Product Description*'].iloc[0])
-                                    
                             except IndexError:
                                 st.warning("No listings were generated. Check if the 'Variations (comma separated)*' column is correctly filled.")
                                 return
                                 
                             st.dataframe(df_final.head(10), use_container_width=True)
                             
-                            # Prepare CSV for download
                             csv_buffer = io.StringIO()
                             df_final.to_csv(csv_buffer, index=False)
                             csv_data = csv_buffer.getvalue().encode()
                             
-                            # Download button
                             st.download_button(
                                 label="Download Final SKU CSV",
                                 data=csv_data,
@@ -512,21 +536,16 @@ def listing_maker_tab():
 def image_optimizer_tab():
     st.title("🖼️ Image Optimizer")
     st.info("Compress and resize images to improve page load times.")
-    
     uploaded_file = st.file_uploader("Upload Image to Optimize", type=["jpg", "jpeg", "png"], key="optimizer_uploader")
-    
     if uploaded_file is not None:
         try:
             image = Image.open(uploaded_file)
             col1, col2 = st.columns(2)
-
             with col1:
                 st.subheader("Original Image")
                 st.image(image, use_column_width=True)
-                
                 quality = st.slider("Compression Quality (0=Max, 100=Min)", 10, 95, 85)
                 max_width = st.number_input("Max Width (px)", value=1000, min_value=100)
-                
             if st.button("Optimize Image"):
                 if image.width > max_width:
                     ratio = max_width / image.width
@@ -534,16 +553,13 @@ def image_optimizer_tab():
                     optimized_image = image.resize((max_width, new_height))
                 else:
                     optimized_image = image
-
                 buffer = io.BytesIO()
                 optimized_image.save(buffer, format="JPEG", quality=quality)
                 buffer.seek(0)
-                
                 with col2:
                     st.subheader("Optimized Image")
                     st.image(optimized_image, use_column_width=True)
                     st.success("Optimization Complete!")
-                    
                     st.download_button(
                         label="Download Optimized Image",
                         data=buffer,
@@ -556,16 +572,13 @@ def image_optimizer_tab():
 def listing_optimizer_tab():
     st.title("📈 Listing Optimizer")
     st.info("Analyze and improve your current product listing text for better conversion and SEO.")
-    
     listing_text = st.text_area("Paste your current product listing description here:", height=300)
-    
     if st.button("Analyze & Suggest Improvements"):
         if listing_text:
             st.subheader("Analysis Results (Placeholder)")
             st.markdown("* **Keyword Density:** Low")
             st.markdown("* **Readability:** Good")
             st.markdown("* **Call-to-Action:** Missing")
-            
             st.subheader("Optimized Suggestion (Simulated)")
             st.success(listing_text.replace("product", "high-quality product listing"))
         else:
@@ -574,9 +587,7 @@ def listing_optimizer_tab():
 def keyword_extractor_tab():
     st.title("🔍 Key Word Extractor")
     st.info("Extract relevant, high-ranking keywords from competitors or product ideas.")
-    
     seed_phrase = st.text_input("Enter a seed phrase or competitor's product name:")
-    
     if st.button("Extract Keywords"):
         if seed_phrase:
             st.subheader(f"Keywords for: **{seed_phrase}** (Simulated)")
@@ -611,6 +622,66 @@ def configuration_tab():
             "Role": ["Admin", "Sub User"],
             "Status": ["Active", "Active"]
         }))
+        
+        # --- MARKETPLACE ADDER ---
+        st.subheader("Marketplace and Logo Management")
+        st.info("Use this tool to add new marketplaces or edit existing logos.")
+        
+        with st.expander("➕ Add New Marketplace", expanded=False):
+            with st.form("marketplace_adder", clear_on_submit=True):
+                new_name = st.text_input("Marketplace Name (e.g., Nykaa)", key="new_mp_name").strip()
+                new_logo_url = st.text_input("Logo Link/URL (e.g., https://logo.com/nykaa.png)", key="new_mp_logo").strip()
+                submitted = st.form_submit_button("Add Marketplace")
+
+                if submitted:
+                    if new_name and new_logo_url:
+                        if new_name not in st.session_state.marketplace_logos:
+                            st.session_state.marketplace_logos[new_name] = new_logo_url
+                            st.success(f"Marketplace '{new_name}' added successfully!")
+                            st.rerun() 
+                        else:
+                            st.warning(f"Marketplace '{new_name}' already exists.")
+                    else:
+                        st.error("Please enter both a name and a logo link.")
+        
+        # --- MARKETPLACE LOGO EDITOR (NEW FEATURE) ---
+        
+        if st.session_state.marketplace_logos:
+            st.subheader("Marketplace Logo Editor")
+            
+            # 1. Select Marketplace to Edit
+            marketplace_to_edit = st.selectbox(
+                "Select Marketplace to Edit Logo",
+                options=list(st.session_state.marketplace_logos.keys()),
+                key="mp_edit_selector"
+            )
+            
+            current_logo_url = st.session_state.marketplace_logos.get(marketplace_to_edit, "")
+            
+            with st.form("marketplace_editor", clear_on_submit=False):
+                # 2. Input for New Logo URL (pre-filled with current URL)
+                new_logo_url_edit = st.text_input(
+                    f"New Logo Link/URL for **{marketplace_to_edit}**", 
+                    value=current_logo_url,
+                    key="new_mp_logo_edit"
+                ).strip()
+                
+                # 3. Update Button
+                submitted_edit = st.form_submit_button("Update Logo")
+                
+                if submitted_edit:
+                    if new_logo_url_edit:
+                        st.session_state.marketplace_logos[marketplace_to_edit] = new_logo_url_edit
+                        st.success(f"Logo for '{marketplace_to_edit}' updated successfully! The app will refresh now.")
+                        st.rerun() # Rerun to refresh the displayed table and the Pricing Tool tabs immediately
+                    else:
+                        st.error("Logo link cannot be empty.")
+        
+        st.markdown("---")
+        st.markdown("#### Current Marketplaces:")
+        current_mps = pd.DataFrame(st.session_state.marketplace_logos.items(), columns=['Marketplace', 'Logo URL'])
+        st.dataframe(current_mps, use_container_width=True)
+        
     else:
         st.error("🛑 Access Denied. This section is for Admin access only.")
 
@@ -644,7 +715,7 @@ def run_app():
         # Define mapping of feature names to functions
         tabs_map = {
             "📝 Listing Maker": listing_maker_tab,
-            "💰 Pricing Tool": pricing_tool_tab, # NEW TAB ADDED HERE
+            "💰 Pricing Tool": pricing_tool_tab,
             "🖼️ Image Uploader": image_uploader_tab,
             "✨ Image Optimizer": image_optimizer_tab,
             "📈 Listing Optimizer": listing_optimizer_tab,
