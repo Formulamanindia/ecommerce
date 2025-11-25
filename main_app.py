@@ -1,4 +1,4 @@
-## main_app.py - FINAL VERSION WITH ADVANCED LISTING MAKER & USABILITY FIXES
+## main_app.py - FINAL VERSION WITH NEW CSV FORMAT SUPPORT
 
 import streamlit as st
 from PIL import Image
@@ -21,12 +21,15 @@ USER_ACCESS = {
 }
 ADMIN_USER = "Globalite"
 
-# Define mandatory CSV headers with *
+# Define mandatory CSV headers with * (Matches the latest Ecommerce_Listing_Sample_Template.csv)
 SAMPLE_CSV_HEADERS = [
-    'Main Image*', '1 st Image', '2nd Image', '3rd Image', '4th Image', 
-    'Product Category*', 'Product Color*', 'Size(comma separated)*', 'Group Name*', 
-    'Fabric Type*', 'SKU Code*', 'MRP*', 'Selling Price*', 'Brand*', 'HSN*'
+    'Product Name*', 'Variations (comma separated)*', 'Product Color*', 'Group Name*', 
+    'Fabric Type*', 'SKU Code*', 'MRP*', 'Selling Price*', 'Brand*', 'HSN*', 
+    'GST Rate*', 'Weight*', 'Inventory*', 'Country Of Origin*', 'Pack of*', 
+    'Product Category*', 'Main Image*', '1 st Image', '2nd Image', '3rd Image', 
+    '4th Image', 'Product Description*'
 ]
+
 MANDATORY_COLS = [col for col in SAMPLE_CSV_HEADERS if col.endswith('*')]
 
 
@@ -152,24 +155,32 @@ def display_footer():
 
 def get_sample_csv():
     """Generates the sample CSV data for download based on defined headers."""
-    # Create a DataFrame with only headers and one sample row
+    # Create a DataFrame with only headers and one sample row (matches the file structure)
     data = {
-        'Main Image*': ["https://sample.com/image.jpg"],
-        '1 st Image': ["(Optional)"],
-        '2nd Image': ["(Optional)"],
-        '3rd Image': ["(Optional)"],
-        '4th Image': ["(Optional)"],
-        'Product Category*': ["T-Shirt"],
+        'Product Name*': ["Sample Name"],
+        'Variations (comma separated)*': ["S,M,L"],
         'Product Color*': ["Red"],
-        'Size(comma separated)*': ["S,M,L"],
         'Group Name*': ["G_TS_RED"],
         'Fabric Type*': ["Cotton"],
         'SKU Code*': ["TS-R-01"],
         'MRP*': [999],
         'Selling Price*': [499],
         'Brand*': ["Formula Man"],
-        'HSN*': [6109]
+        'HSN*': [6109],
+        'GST Rate*': [5],
+        'Weight*': [100],
+        'Inventory*': [1],
+        'Country Of Origin*': ["India"],
+        'Pack of*': [1],
+        'Product Category*': ["T-Shirt"],
+        'Main Image*': ["https://sample.com/image.jpg"],
+        '1 st Image': ["(Optional)"],
+        '2nd Image': ["(Optional)"],
+        '3rd Image': ["(Optional)"],
+        '4th Image': ["(Optional)"],
+        'Product Description*': [""]
     }
+    # Ensure correct column order is maintained
     df = pd.DataFrame(data, columns=SAMPLE_CSV_HEADERS)
     
     csv_buffer = io.StringIO()
@@ -179,51 +190,66 @@ def get_sample_csv():
 
 def generate_sku_listings(df):
     """
-    Processes the DataFrame to explode sizes into individual SKUs,
-    creates unique SKU codes, and sorts by Group Name.
+    Processes the DataFrame to explode variations into individual SKUs,
+    creates unique SKU codes (SKU--COLOR--SIZE), and sorts by Group Name.
     """
     
-    size_col = 'Size(comma separated)*'
+    # --- Corrected column name based on latest file ---
+    size_col = 'Variations (comma separated)*'
+    # ---------------------------------------------------
+    
     sku_col = 'SKU Code*'
     group_col = 'Group Name*'
-    
+    color_col = 'Product Color*'
+
     # 1. Mandatory Column Check
     for col in MANDATORY_COLS:
         if col not in df.columns:
             st.error(f"Mandatory column missing: '{col}'. Please correct your CSV header.")
             return None
-
+    
     # 2. Split and Explode
-    # Ensure there are no NaNs in the size column before splitting
     df[size_col] = df[size_col].fillna('').astype(str).str.replace(' ', '').str.upper().str.split(',')
-    
-    # Handle rows where size column is empty after split (e.g., [''])
     df = df[df[size_col].apply(lambda x: len(x) > 0 and x != [''])]
-    
     df_expanded = df.explode(size_col, ignore_index=True)
-    
-    # Rename the size column
     df_expanded.rename(columns={size_col: 'Size'}, inplace=True)
     
-    # 3. Create a unique SKU for each variation
-    df_expanded['New SKU'] = df_expanded[sku_col].astype(str) + '-' + df_expanded['Size'].astype(str)
+    # 3. Create a unique SKU for each variation (SKU--COLOR--SIZE)
+    
+    # Clean Color Column for SKU: UPPERCASE, remove spaces
+    cleaned_color = df_expanded[color_col].astype(str).str.replace(' ', '').str.upper()
+    
+    # New SKU format: SKU_CODE -- COLOR -- SIZE
+    df_expanded['New SKU'] = (
+        df_expanded[sku_col].astype(str) + 
+        '--' + 
+        cleaned_color + 
+        '--' + 
+        df_expanded['Size'].astype(str)
+    )
     
     # Drop the old SKU Code* and use the new one
     df_expanded.drop(columns=[sku_col], inplace=True)
     df_expanded.rename(columns={'New SKU': sku_col}, inplace=True)
 
-    # 4. Sort by Group Name*
+    # 4. Sort and Reorder 
     df_sorted = df_expanded.sort_values(by=group_col, ascending=True)
     
-    # Reorder columns
     cols = list(df_sorted.columns)
-    cols.insert(1, cols.pop(cols.index('Size')))
-    cols.insert(0, cols.pop(cols.index(sku_col)))
+    
+    # Move SKU, Size, and Color to the front
+    if 'Size' in cols:
+        cols.insert(1, cols.pop(cols.index('Size')))
+    if color_col in cols:
+        cols.insert(2, cols.pop(cols.index(color_col))) # Place Color after Size
+    if sku_col in cols:
+        cols.insert(0, cols.pop(cols.index(sku_col))) # Place SKU at the very front
+
     df_sorted = df_sorted[cols]
     
     return df_sorted
 
-# --- 4. FEATURE IMPLEMENTATION ---
+# --- 4. FEATURE IMPLEMENTATION (Listing Maker) ---
 
 def image_uploader_tab():
     st.title("🖼️ Image Uploader")
@@ -255,12 +281,7 @@ def listing_maker_tab():
         'Nykaa', 'Mens XP', 'Tata Cliq', 'First Cry', 'Paytm Mall', 
         'Snapdeal', 'IndiaMart', 'Shopify'
     ]
-    quick_commerce_channels = [
-        'Blinkit', 'Zepto', 'Swiggy Instamart', 'Dunzo Daily', 'BigBasket', 
-        'Amazon Fresh', 'Flipkart Minutes', 'Myntra (M-Now)', 'FreshToHome'
-    ]
     
-    # --- Conditional Logic for Channel Category ---
     if channel_category == "Ecommerce":
         channels = ecommerce_channels
         
@@ -312,6 +333,14 @@ def listing_maker_tab():
                         if df_final is not None:
                             st.subheader("4. Generated Listings Preview")
                             st.write(f"Total SKU-level listings generated: **{df_final.shape[0]}**")
+                            # Display the new SKU format example
+                            try:
+                                st.caption(f"Example SKU Format: **{df_final['SKU Code*'].iloc[0]}**")
+                            except IndexError:
+                                # Handle case where df_final is empty but not None
+                                st.warning("No listings were generated. Check if the 'Variations (comma separated)*' column is correctly filled.")
+                                return
+                                
                             st.dataframe(df_final.head(10), use_container_width=True)
                             
                             # Prepare CSV for download
