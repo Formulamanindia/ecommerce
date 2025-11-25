@@ -191,6 +191,7 @@ def generate_description_mock(row):
     """
     MOCK FUNCTION: Generates a conversion-focused, keyword-rich product description 
     (under 1400 characters) if the existing description field is empty, based on user instructions.
+    NOTE: Markdown bolding has been removed from the final output string.
     """
     # Extract data with safe defaults
     title = row.get('Product Name*')
@@ -206,13 +207,14 @@ def generate_description_mock(row):
         
     # Generate engaging description based on user logic:
     # Tone: Warm, trustworthy. Focus: Comfort, fit, usage, buyer benefits.
+    # Words that were bolded are now capitalized instead to provide mild emphasis without markdown.
     description = (
-        f"Elevate your wardrobe with this exquisite **{category}** from **{brand}**. "
-        f"Crafted from ultra-soft **{fabric}**, this piece guarantees all-day **comfort** and a premium feel. "
-        f"The stunning **{color}** shade offers a versatile, modern look, effortlessly transitioning "
-        f"from casual outings to relaxed evening wear. Designed for a comfortable fit, it provides ease of "
-        f"movement while maintaining a sharp silhouette. Available in sizes **{sizes}**, finding your "
-        f"perfect match is simple. Invest in quality and style that lasts, ensuring you look and feel your best "
+        f"Elevate your wardrobe with this exquisite {category} from {brand}. "
+        f"Crafted from ultra-soft {fabric}, this piece guarantees all-day COMFORT and a premium feel. "
+        f"The stunning {color} shade offers a versatile, MODERN look, effortlessly transitioning "
+        f"from casual outings to relaxed evening wear. Designed for a comfortable FIT, it provides ease of "
+        f"movement while maintaining a sharp silhouette. Available in sizes {sizes}, finding your "
+        f"PERFECT match is simple. Invest in quality and style that lasts, ensuring you look and feel your best "
         f"every time you wear it. A must-have staple for your collection. "
         f"(Keywords: {title.replace(' ', ', ').replace('-', ',')}, {category}, {fabric}, {color})"
     )
@@ -243,7 +245,7 @@ def generate_sku_listings(df):
             st.error(f"Mandatory column missing: '{col}'. Please correct your CSV header.")
             return None
             
-    # --- NEW FEATURE: Generate/Update Product Description ---
+    # --- FEATURE: Generate/Update Product Description ---
     # Apply the generation ONLY if the description field is empty/missing (as per instruction)
     df[desc_col] = df.apply(
         lambda row: generate_description_mock(row) 
@@ -416,7 +418,7 @@ def listing_maker_tab():
 
 
 def image_optimizer_tab():
-    st.title("✨ Image Optimizer")
+    st.title("🖼️ Image Optimizer")
     st.info("Compress and resize images to improve page load times.")
     
     uploaded_file = st.file_uploader("Upload Image to Optimize", type=["jpg", "jpeg", "png"], key="optimizer_uploader")
